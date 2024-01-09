@@ -1,0 +1,1 @@
+Move all files to root server directory if switching back to firebase hosting

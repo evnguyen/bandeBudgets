@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "budget-app-mobile",
+    "slug": "budget-app-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.bebudget"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.bebudget"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "react-native-auth0",
+        {
+          "domain": "dev-893eqfsg.us.auth0.com"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4ce6e70c-6048-473e-aef5-8fa6d7bd3f24"
+      }
+    }
+  }
+}
