@@ -19,7 +19,8 @@
     "express": "^4.18.2",
     "firebase": "^10.7.1",
     "firebase-admin": "^12.0.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "copyfiles": "^2.4.1"
