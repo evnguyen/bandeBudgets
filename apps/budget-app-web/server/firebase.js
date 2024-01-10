@@ -4,6 +4,7 @@
 // const { getFirestore } = require("firebase/firestore");
 // const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
+const { getAuth } = require("firebase-admin/auth");
 const serviceAccount = require("./budget-app-c4027-firebase-adminsdk-1o7xp-ef94eca352");
 const admin = require("firebase-admin");
 
@@ -28,11 +29,11 @@ admin.initializeApp({
 
 // Initialize Firebase for client
 // const firebaseClientApp = initializeApp(firebaseConfig);
-const firebaseAdminApp = initializeApp(); // admin version of initializeApp
+// const firebaseAdminApp = initializeApp(); // admin version of initializeApp
 // const db = getFirestore(app);
 const db = getFirestore();
-// const auth = getAuth(firebaseClientApp);
+const auth = getAuth();
 module.exports = {
   db,
-  firebaseAdminApp,
+  auth,
 };

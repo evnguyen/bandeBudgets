@@ -1,18 +1,28 @@
 const express = require("express");
-const { db, firebaseAdminApp } = require("../../firebase");
+const { db, auth } = require("../../firebase");
 
 const routes = express.Router();
 
-routes.route("/api/test").get(async function (req, res) {
-  const docRef = db.collection("users").doc("alovelace");
+routes.route("/api/test").get(async (req, res) => {
+  const idToken = req.headers.idtoken;
+  auth
+    .verifyIdToken(idToken)
+    .then(async (resp) => {
+      console.log(resp);
+      const docRef = db.collection("users").doc("alovelace");
 
-  await docRef.set({
-    first: "Ada",
-    last: "Lovelace",
-    born: 1815,
-  });
+      await docRef.set({
+        first: "Ada",
+        last: "Lovelace",
+        born: 1815,
+      });
 
-  res.json({ user: "tobi" });
+      res.json({ user: "tobi" });
+    })
+    .catch((error) => {
+      console.log("Error verifying id token");
+      res.status(401).json({ error: "Unauthorized" });
+    });
 });
 
 // This section will help you get a single record by id

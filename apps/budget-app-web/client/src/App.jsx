@@ -27,9 +27,15 @@ function App() {
           // User successfully signed in.
           // Return type determines whether we continue the redirect automatically
           // or whether we leave that to developer to handle.
-
-          dispatch(user(auth.currentUser.toJSON()));
-          setLoggedIn(true);
+          auth.currentUser.getIdToken().then((idToken) => {
+            dispatch(
+              user({
+                ...auth.currentUser.toJSON(),
+                idToken,
+              })
+            );
+            setLoggedIn(true);
+          });
           // auth.sendEmailVerification(auth.currentUser);
           // return true;
         },
@@ -58,7 +64,6 @@ function App() {
   return (
     <>{loggedIn ? <Dashboard /> : <div id="firebaseui-auth-container"></div>}</>
   );
-  // return <Dashboard></Dashboard>;
 }
 
 export default App;
