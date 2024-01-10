@@ -1,5 +1,6 @@
 // Import the functions you need from the SDKs you need
 // const { initializeApp } = require("firebase/app");
+// const { getAuth } = require("firebase/auth");
 // const { getFirestore } = require("firebase/firestore");
 // const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -25,11 +26,13 @@ admin.initializeApp({
 //   measurementId: "G-J3J140790S",
 // };
 
-// Initialize Firebase
-// const app = initializeApp(firebaseConfig);
+// Initialize Firebase for client
+// const firebaseClientApp = initializeApp(firebaseConfig);
+const firebaseAdminApp = initializeApp(); // admin version of initializeApp
 // const db = getFirestore(app);
-
 const db = getFirestore();
+// const auth = getAuth(firebaseClientApp);
 module.exports = {
   db,
+  firebaseAdminApp,
 };

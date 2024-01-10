@@ -1,19 +1,21 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  isLoading: 0,
+  user: null,
 };
 
 export const budgetSlice = createSlice({
   name: "budget",
   initialState,
   reducers: {
-    isLoading: (state, action) => {
-      state.isLoading = action.payload;
+    user: (state, action) => {
+      state.user = action.payload;
     },
   },
 });
 
-export const { isLoading } = budgetSlice.actions;
+export const { user } = budgetSlice.actions;
+
+export const getUser = (state) => state.user;
 
 export default budgetSlice.reducer;

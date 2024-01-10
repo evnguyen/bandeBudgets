@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { isLoading } from "budget-app-store/src/budget/budgetSlice";
+import { getUser } from "budget-app-store/src/budget/budgetSlice";
 // import { collection, addDoc } from "firebase/firestore";
 // import { db } from "../../firebase";
 import "./index.css";
@@ -7,9 +7,9 @@ import "./index.css";
 function Dashboard() {
   // const store = useStore();
   const dispatch = useDispatch();
-  const loading = useSelector((state) => state.budget.isLoading);
+  const userData = useSelector(getUser);
 
-  console.log(loading);
+  console.log(userData);
 
   return (
     <>
@@ -17,7 +17,7 @@ function Dashboard() {
         <a
           className="App-link"
           onClick={() => {
-            dispatch(isLoading(true));
+            // dispatch(isLoading(true));
           }}
         >
           Learn React

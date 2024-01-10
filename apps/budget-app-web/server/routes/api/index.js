@@ -1,12 +1,8 @@
 const express = require("express");
-const { db } = require("../../firebase");
+const { db, firebaseAdminApp } = require("../../firebase");
 
-// routes is an instance of the express router.
-// We use it to define our routes.
-// The router will be added as a middleware and will take control of requests starting with path /record.
 const routes = express.Router();
 
-// This section will help you get a list of all the records.
 routes.route("/api/test").get(async function (req, res) {
   const docRef = db.collection("users").doc("alovelace");
 
