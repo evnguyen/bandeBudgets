@@ -4,7 +4,6 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "netlify dev",
     "copyClientBuild": "rm -rf public && copyfiles -u 3 ../client/build/* ../client/build/static/js/* ../client/build/static/css/* public",
     "deploy:production": "firebase deploy",

@@ -9,7 +9,7 @@ routes.route("/api/test").get(async (req, res) => {
     .verifyIdToken(idToken)
     .then(async (resp) => {
       console.log(resp);
-      const docRef = db.collection("users").doc("alovelace");
+      const docRef = db.collection("budgetData").doc(resp.uid + "tt");
 
       await docRef.set({
         first: "Ada",

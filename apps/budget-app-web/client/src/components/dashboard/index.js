@@ -1,6 +1,7 @@
 import { useDispatch, useSelector } from "react-redux";
 import { getUser } from "budget-app-store/src/budget/budgetSlice";
 import "./index.css";
+import Header from "../header";
 
 function Dashboard() {
   const dispatch = useDispatch();
@@ -10,6 +11,7 @@ function Dashboard() {
 
   return (
     <>
+      <Header />
       <button className="App">
         <a
           className="App-link"
