@@ -1,0 +1,12 @@
+.sidebar {
+  display: flex;
+  flex-flow: column;
+  min-width: 100px;
+  width: 30%;
+}
+
+.sidebar__logo {
+  display: flex;
+  justify-content: center;
+  margin: 50px 10px 50px 10px;
+}

@@ -1,0 +1,30 @@
+.homeContainer {
+  height: 100%;
+  width: 100%;
+  margin: 0 2%;
+}
+
+.home {
+  width: 100%;
+}
+
+.content {
+  display: flex;
+}
+
+.card {
+  margin: 15px;
+}
+
+.monthSelector {
+  margin-bottom: 15px;
+}
+
+.budget {
+  width: 60%;
+  margin: 15px;
+}
+
+.report {
+  width: 40%;
+}

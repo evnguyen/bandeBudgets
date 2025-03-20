@@ -1,0 +1,27 @@
+html {
+  height: 100%;
+}
+
+body {
+  height: 100%;
+}
+
+.login-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+
+.login__header {
+  display: flex;
+  justify-content: center;
+  margin: 15px;
+  text-align: center;
+}
+.passwordForm {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
