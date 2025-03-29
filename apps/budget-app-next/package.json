@@ -13,9 +13,12 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@firebase/firestore": "^4.7.2",
+    "@mui/icons-material": "^6.4.8",
     "@mui/material": "^6.4.8",
     "@mui/material-nextjs": "^6.4.3",
+    "@mui/x-charts": "^7.28.0",
     "@mui/x-data-grid": "^7.28.0",
+    "@mui/x-date-pickers": "^7.28.0",
     "@tamagui/config": "^1.112.0",
     "@tamagui/next-plugin": "^1.112.0",
     "@tamagui/next-theme": "^1.112.0",
@@ -33,6 +36,7 @@
   "devDependencies": {
     "eslint": "^8",
     "eslint-config-next": "14.2.12",
+    "prettier": "^3.5.3",
     "prettier-plugin-organize-imports": "^4.1.0"
   }
 }

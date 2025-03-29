@@ -13,7 +13,6 @@ export async function middleware(request) {
     (!token || request.nextUrl.pathname === '/') &&
     !request.url.includes('/login')
   ) {
-    console.log('middlewate v222222222', token, request);
     return NextResponse.redirect(new URL('/login', request.url));
   }
   return NextResponse.next();

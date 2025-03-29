@@ -1,27 +1,57 @@
-'use client';
+"use client";
 // import { Roboto } from 'next/font/google';
-import { createTheme } from '@mui/material/styles';
+import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
-  cssVariables: true,
+  cssVariables: {
+    colorSchemeSelector: "class",
+  },
   colorSchemes: {
     light: {
       palette: {
         primary: {
-          main: '#56b53f',
+          main: "#56b53f",
         },
         secondary: {
-          main: '#3C4F76',
+          main: "#3C4F76",
+        },
+        background: {
+          default: "#F5F5F5",
+          paper: "#fff",
+        },
+      },
+      components: {
+        MuiDataGrid: {
+          styleOverrides: {
+            columnHeader: {
+              backgroundColor: "#fff",
+            },
+            overlay: {
+              backgroundColor: "#fff",
+            },
+          },
         },
       },
     },
     dark: {
       palette: {
         primary: {
-          main: '#56b53f',
+          main: "#56b53f",
         },
         secondary: {
-          main: '#3C4F76',
+          main: "#3C4F76",
+        },
+      },
+      components: {
+        MuiDataGrid: {
+          styleOverrides: {
+            columnHeader: {
+              backgroundColor: "#121212",
+            },
+            overlay: {
+              backgroundColor: "#121212",
+            },
+          },
         },
       },
     },

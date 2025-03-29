@@ -1,15 +1,16 @@
 .homeContainer {
-  height: 100%;
   width: 100%;
-  margin: 0 2%;
 }
 
 .home {
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.content {
+.home__content {
   display: flex;
+  padding: 0 2%;
 }
 
 .card {
@@ -21,10 +22,13 @@
 }
 
 .budget {
-  width: 60%;
   margin: 15px;
 }
 
-.report {
-  width: 40%;
+.summaryDetails {
+  position: relative;
+}
+
+.budget__addCategoryButton {
+  margin-top: 25px;
 }
