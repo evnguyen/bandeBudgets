@@ -1,0 +1,21 @@
+.budgetDetails {
+  height: calc(100vh - 3rem);
+  padding: 5%;
+}
+
+.budgetDetails__closeButton {
+  width: fit-content;
+  margin-right: 0;
+  margin-left: auto;
+}
+.budgetDetails__content {
+  padding: 5%;
+}
+
+.budgetDetails__transactionsTitle {
+  margin-top: 15px;
+}
+
+.budgetDetails__listItem {
+  padding: 0;
+}
