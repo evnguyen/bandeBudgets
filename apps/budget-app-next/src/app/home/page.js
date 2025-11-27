@@ -511,29 +511,29 @@ export default function Home() {
 
   const getTotalSpent = useMemo(() => {
     try {
-      let totalSpent = 0;
+    let totalSpent = 0;
       const currentMonthData = budgetData?.[month] ?? {};
 
-      // TODO: optimize
-      for (const [categoryName, categoryData] of Object.entries(
+    // TODO: optimize
+    for (const [categoryName, categoryData] of Object.entries(
         currentMonthData,
-      )) {
+    )) {
         if (
           categoryData?.isSpendingType &&
           categoryData?.rows &&
           Array.isArray(categoryData.rows)
         ) {
-          for (const row of categoryData.rows) {
+        for (const row of categoryData.rows) {
             if (!row?.transactions || !Array.isArray(row.transactions))
               continue;
             for (const transaction of row.transactions) {
               totalSpent += Number(transaction?.amount) || 0;
-            }
           }
         }
       }
+    }
 
-      return totalSpent;
+    return totalSpent;
     } catch (error) {
       console.error("Error calculating total spent:", error);
       return 0;
@@ -932,18 +932,18 @@ export default function Home() {
             </IconButton>
 
             <FormControl size="small" sx={{ minWidth: 140 }}>
-              <Select
-                value={month}
-                onChange={(event) => {
-                  setMonth(event.target.value);
-                }}
-                sx={{
+          <Select
+            value={month}
+            onChange={(event) => {
+              setMonth(event.target.value);
+            }}
+            sx={{
                   "& .MuiSelect-select": {
                     fontSize: "1.25rem",
                     fontWeight: 600,
                     color: "text.primary",
-                    display: "flex",
-                    alignItems: "center",
+                display: "flex",
+                alignItems: "center",
                     py: 1,
                     px: 2,
                   },
@@ -955,8 +955,8 @@ export default function Home() {
                   },
                   "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                     border: "none",
-                  },
-                }}
+              },
+            }}
                 startAdornment={
                   <CalendarTodayIcon
                     sx={{
@@ -966,7 +966,7 @@ export default function Home() {
                     }}
                   />
                 }
-              >
+          >
                 {listOfMonths.map((monthName) => (
                   <MenuItem
                     key={monthName}
@@ -986,10 +986,10 @@ export default function Home() {
                     }}
                   >
                     {monthName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
             <IconButton
               onClick={() => {
@@ -1047,11 +1047,11 @@ export default function Home() {
               Your Budget Categories
             </Typography>
 
-            {Object.entries(budgetData[month]).map(([name, data]) => (
-              <Accordion
-                key={name}
-                defaultExpanded={true}
-                sx={{
+        {Object.entries(budgetData[month]).map(([name, data]) => (
+          <Accordion
+            key={name}
+            defaultExpanded={true}
+            sx={{
                   mb: 2,
                   borderRadius: 2,
                   border: "1px solid",
@@ -1064,29 +1064,29 @@ export default function Home() {
                     borderRadius: 2,
                     background: (theme) =>
                       `linear-gradient(135deg, ${theme.palette.background.paper}, ${theme.palette.background.default})`,
-                  },
-                }}
-              >
+              },
+            }}
+          >
                 <AccordionSummary
                   expandIcon={<ExpandMoreIcon />}
-                  sx={{
+              sx={{
                     "& .MuiAccordionSummary-content": {
-                      alignItems: "center",
+                alignItems: "center",
                       gap: 2,
                     },
-                  }}
-                >
+              }}
+            >
                   {/* Category Header */}
                   <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
                       gap: 2,
                       flex: 1,
-                    }}
-                  >
+                }}
+              >
                     <Avatar
-                      sx={{
+                sx={{
                         bgcolor: data?.isSpendingType
                           ? "primary.light"
                           : "success.light",
@@ -1140,18 +1140,18 @@ export default function Home() {
 
                   {/* Action Buttons */}
                   <Stack direction="row" spacing={1}>
-                    <IconButton
+                <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
-                        setOpenAddRowDialog({
-                          category: name,
+                    setOpenAddRowDialog({
+                      category: name,
                           isSpendingType: data?.isSpendingType,
-                        });
-                      }}
+                    });
+                  }}
                       sx={{ color: "primary.main" }}
-                    >
-                      <AddIcon />
-                    </IconButton>
+                >
+                  <AddIcon />
+                </IconButton>
                     <IconButton
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1159,36 +1159,36 @@ export default function Home() {
                       }}
                       sx={{ color: "error.main" }}
                     >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Stack>
+                  <DeleteIcon />
+                </IconButton>
+              </Stack>
                 </AccordionSummary>
 
                 <AccordionDetails sx={{ p: 0 }}>
                   <Box sx={{ p: 2 }}>
-                    <DataGrid
+                <DataGrid
                       rows={data?.rows || []}
                       columns={data?.columns || []}
-                      hideFooter={true}
+                  hideFooter={true}
                       autoHeight={true}
                       density={isMobile ? "compact" : "standard"}
-                      editMode="cell"
+                  editMode="cell"
                       rowModesModel={rowModesModel[name] || {}}
-                      onRowSelectionModelChange={(newRowSelectionModel) => {
-                        handleRowSelectionModelChange(newRowSelectionModel);
-                      }}
-                      rowSelectionModel={rowSelectionModel}
+                  onRowSelectionModelChange={(newRowSelectionModel) => {
+                    handleRowSelectionModelChange(newRowSelectionModel);
+                  }}
+                  rowSelectionModel={rowSelectionModel}
                       processRowUpdate={(newRow) =>
                         processRowUpdate(name, newRow)
                       }
-                      onRowEditStart={(params) => {
-                        switchMode(GridRowModes.Edit, name, params.id);
-                      }}
-                      onRowEditStop={(params) => {
-                        switchMode(GridRowModes.View, name, params.id);
-                      }}
-                      initialState={{ pagination: { paginationModel } }}
-                      sx={{
+                  onRowEditStart={(params) => {
+                    switchMode(GridRowModes.Edit, name, params.id);
+                  }}
+                  onRowEditStop={(params) => {
+                    switchMode(GridRowModes.View, name, params.id);
+                  }}
+                  initialState={{ pagination: { paginationModel } }}
+                  sx={{
                         border: "none",
                         borderRadius: 3,
                         boxShadow:
@@ -1306,13 +1306,13 @@ export default function Home() {
                       }}
                     />
                   </Box>
-                </AccordionDetails>
-              </Accordion>
-            ))}
+            </AccordionDetails>
+          </Accordion>
+        ))}
 
             <Box sx={{ mt: 4, textAlign: "center" }}>
-              <Button
-                variant="outlined"
+        <Button
+          variant="outlined"
                 onClick={() => setOpenAddCategoryDialog(true)}
                 startIcon={<AddIcon />}
                 size="large"
@@ -1331,7 +1331,7 @@ export default function Home() {
                 }}
               >
                 Add New Category
-              </Button>
+        </Button>
             </Box>
           </>
         )}
@@ -1557,23 +1557,23 @@ export default function Home() {
             >
               <RestartAltIcon />
             </IconButton>
-            <IconButton
-              onClick={() => {
-                setMode(
-                  mode === themeModes.DARK ? themeModes.LIGHT : themeModes.DARK,
-                );
-              }}
-            >
-              {mode === themeModes.DARK ? <DarkModeIcon /> : <LightModeIcon />}
-            </IconButton>
+          <IconButton
+            onClick={() => {
+              setMode(
+                mode === themeModes.DARK ? themeModes.LIGHT : themeModes.DARK,
+              );
+            }}
+          >
+            {mode === themeModes.DARK ? <DarkModeIcon /> : <LightModeIcon />}
+          </IconButton>
 
-            <Button
+          <Button
               onClick={async () => {
-                // TODO: Change sign out to a server action
-                auth.signOut();
-                await deleteCookie("firebase_token");
-                router.push("/login");
-              }}
+              // TODO: Change sign out to a server action
+              auth.signOut();
+              await deleteCookie("firebase_token");
+              router.push("/login");
+            }}
               variant="outlined"
               size="small"
               sx={{
@@ -1585,9 +1585,9 @@ export default function Home() {
                   backgroundColor: "rgba(255, 255, 255, 0.08)",
                 },
               }}
-            >
+          >
               Sign Out
-            </Button>
+          </Button>
           </Stack>
         </Toolbar>
       </AppBar>
@@ -1615,7 +1615,7 @@ export default function Home() {
                 // Convert radio button value to boolean (true for spending, false for income)
                 const isSpendingType = formJson.type === "spending";
                 handleAddNewCategory(formJson.name.trim(), isSpendingType);
-                setOpenAddCategoryDialog(false);
+              setOpenAddCategoryDialog(false);
               }
             },
           },
@@ -1638,13 +1638,13 @@ export default function Home() {
           </Typography>
 
           <Stack spacing={3}>
-            <TextField
-              autoFocus
-              required
-              id="name"
-              name="name"
+          <TextField
+            autoFocus
+            required
+            id="name"
+            name="name"
               label="Category Name"
-              fullWidth
+            fullWidth
               variant="outlined"
               placeholder="e.g., Groceries, Salary, Entertainment"
               helperText="Choose a descriptive name for your category"
@@ -1806,15 +1806,15 @@ export default function Home() {
               const formData = new FormData(event.currentTarget);
               const formJson = Object.fromEntries(formData.entries());
               if (formJson.name && formJson.name.trim() && formJson.planned) {
-                handleAddItem(
+              handleAddItem(
                   {
                     name: formJson.name.trim(),
                     planned: formJson.planned,
                   },
-                  openAddRowDialog.category,
+                openAddRowDialog.category,
                   openAddRowDialog.isSpendingType,
-                );
-                setOpenAddRowDialog(false);
+              );
+              setOpenAddRowDialog(false);
               }
             },
           },

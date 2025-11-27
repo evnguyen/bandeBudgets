@@ -1,11 +1,28 @@
 import { adminAuth } from '../../../firebaseAdmin';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 export default async function HomeLayout({ children }) {
-  const cookieStore = cookies();
-  const token = cookieStore.get('firebase_token');
+  const cookieStore = await cookies();
 
+  // First check budget password authentication (JWT)
+  const budgetAuth = cookieStore.get('budget_auth');
+  if (!budgetAuth) {
+    redirect('/password');
+  }
+
+  try {
+    jwt.verify(budgetAuth.value, JWT_SECRET);
+  } catch (error) {
+    // JWT verification failed - redirect to password page
+    redirect('/password');
+  }
+
+  // Now check Firebase authentication
+  const token = cookieStore.get('firebase_token');
   if (!token) {
     redirect('/login');
   }

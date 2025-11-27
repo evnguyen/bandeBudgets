@@ -12,8 +12,6 @@ import './login.css';
 export default function Login() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [user, setUser] = useState();
-  const [hasAccess, setHasAccess] = useState(false);
-  const [value, setValue] = useState('testetetetet');
   const router = useRouter();
 
   const saveToken = async (userCredential) => {
@@ -35,7 +33,6 @@ export default function Login() {
     setLoggedIn(true);
     await saveToken(userData);
     await redirectToPage('/home');
-    // router.push('/home');
   };
 
   const renderLoginForm = () => {
