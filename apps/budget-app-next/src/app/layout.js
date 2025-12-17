@@ -2,11 +2,8 @@
 // import '@tamagui/core/reset.css';
 // import { NextTamaguiProvider } from '../components/NextTamaguiProvider';
 import { adminAuth } from '../../firebaseAdmin';
-import { ThemeProvider } from '@mui/material/styles';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import CssBaseline from '@mui/material/CssBaseline';
 import { cookies } from 'next/headers';
-import theme from '@/theme';
+import ThemeProviderWrapper from '../components/ThemeProviderWrapper';
 import './globals.css';
 
 export default async function RootLayout({ children }) {
@@ -23,15 +20,12 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body>
         {/* <NextTamaguiProvider> */}
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <ThemeProvider theme={theme}>
-            <div className="rootContainer">
-              {/* {showSideBar && <SidebarNavigation />} */}
-              <CssBaseline />
-              <div className="content">{children}</div>
-            </div>
-          </ThemeProvider>
-        </AppRouterCacheProvider>
+        <ThemeProviderWrapper>
+          <div className="rootContainer">
+            {/* {showSideBar && <SidebarNavigation />} */}
+            <div className="content">{children}</div>
+          </div>
+        </ThemeProviderWrapper>
         {/* </NextTamaguiProvider> */}
       </body>
     </html>
