@@ -1,43 +1,83 @@
 'use client';
 
-import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
+import type { TooltipProps } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Category } from '@/lib/types';
 import { THEME_COLORS } from '@/lib/theme-colors';
+import {
+  getExpenseCategorySummaries,
+  ExpenseCategorySummary,
+} from '@/lib/utils/budget-summaries';
 
 interface BudgetChartProps {
   categories: Category[];
 }
 
+interface BudgetChartRow extends ExpenseCategorySummary {
+  chartValue: number;
+}
+
 export function BudgetChart({ categories }: BudgetChartProps) {
-  const expenseCategories = categories.filter((c) => c.type === 'expense');
+  const rows = getExpenseCategorySummaries(categories);
 
-  const data = expenseCategories.map((category) => ({
-    name: category.name,
-    value: category.budgetItems.reduce((sum, item) => sum + item.plannedAmount, 0),
-    spent: category.budgetItems.reduce((sum, item) => sum + item.spentAmount, 0),
-  }));
-
-  const colors = [
-    'hsl(0, 100%, 50%)',
-    'hsl(30, 100%, 50%)',
-    'hsl(60, 100%, 50%)',
-    'hsl(90, 100%, 40%)',
-    'hsl(120, 100%, 40%)',
-    'hsl(150, 100%, 40%)',
-    'hsl(180, 100%, 40%)',
-    'hsl(210, 100%, 50%)',
-  ];
-
-  const totalPlanned = data.reduce((sum, d) => sum + d.value, 0);
-  const totalSpent = data.reduce((sum, d) => sum + d.spent, 0);
-
-  if (expenseCategories.length === 0) {
+  if (rows.length === 0) {
     return (
       <div className="rounded-lg border border-border bg-card p-6 text-center">
         <p className="text-muted-foreground">{'No expense categories to visualize'}</p>
       </div>
     );
   }
+
+  const chartData: BudgetChartRow[] = rows
+    .map((row) => ({
+      ...row,
+      chartValue: row.spent > 0 ? row.spent : row.planned,
+    }))
+    .filter((row) => row.chartValue > 0);
+
+  if (chartData.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-6 text-center">
+        <p className="text-muted-foreground">
+          {'Add planned amounts or track spending to populate the chart.'}
+        </p>
+      </div>
+    );
+  }
+
+  const totalPlanned = rows.reduce((sum, row) => sum + row.planned, 0);
+  const totalSpent = rows.reduce((sum, row) => sum + row.spent, 0);
+
+  const palette = THEME_COLORS.map((color) => `hsl(${color.primary})`);
+
+  const renderTooltip = ({
+    active,
+    payload,
+  }: TooltipProps<number, string>) => {
+    if (!active || !payload?.length) {
+      return null;
+    }
+
+    const row = payload[0].payload as BudgetChartRow;
+
+    return (
+      <div className="rounded-lg border border-border bg-card p-3 text-xs text-muted-foreground shadow">
+        <div className="mb-1 text-left text-sm font-semibold text-foreground">{row.name}</div>
+        <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+          <span>Spent</span>
+          <span className="font-semibold text-foreground">${row.spent.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+          <span>Planned</span>
+          <span className="font-semibold text-foreground">${row.planned.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center justify-between text-[0.65rem] uppercase tracking-wider text-muted-foreground">
+          <span>Remaining</span>
+          <span className="font-semibold text-foreground">${row.remaining.toFixed(2)}</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 rounded-lg border border-border bg-card p-6">
@@ -47,26 +87,19 @@ export function BudgetChart({ categories }: BudgetChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
                 outerRadius={100}
                 paddingAngle={2}
-                dataKey="value"
+                dataKey="chartValue"
               >
-                {data.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                {chartData.map((_, index) => (
+                  <Cell key={`cell-${index}`} fill={palette[index % palette.length]} />
                 ))}
               </Pie>
-              <Tooltip
-                formatter={(value: any) => `$${value.toFixed(2)}`}
-                contentStyle={{
-                  backgroundColor: 'var(--background)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                }}
-              />
+              <Tooltip content={renderTooltip} />
             </PieChart>
           </ResponsiveContainer>
         </div>

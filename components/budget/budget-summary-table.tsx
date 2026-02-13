@@ -1,28 +1,14 @@
 'use client';
 
 import { Category } from '@/lib/types';
+import { getExpenseCategorySummaries } from '@/lib/utils/budget-summaries';
 
 interface BudgetSummaryTableProps {
   categories: Category[];
 }
 
 export function BudgetSummaryTable({ categories }: BudgetSummaryTableProps) {
-  const expenseCategories = categories.filter((c) => c.type === 'expense');
-
-  const rows = expenseCategories.map((category) => {
-    const planned = category.budgetItems.reduce((sum, item) => sum + item.plannedAmount, 0);
-    const spent = category.budgetItems.reduce((sum, item) => sum + item.spentAmount, 0);
-    const remaining = planned - spent;
-    const percentage = planned > 0 ? Math.round((spent / planned) * 100) : 0;
-
-    return {
-      name: category.name,
-      planned,
-      spent,
-      remaining,
-      percentage,
-    };
-  });
+  const rows = getExpenseCategorySummaries(categories);
 
   if (rows.length === 0) {
     return null;
