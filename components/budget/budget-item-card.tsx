@@ -27,13 +27,15 @@ interface BudgetItemCardProps {
 
 export function BudgetItemCard({ categoryId, item, type }: BudgetItemCardProps) {
   const { deleteBudgetItem } = useBudgetStore();
+  const isIncome = type === 'income';
+  const transactions = item.transactions ?? [];
   
   const percentage = item.plannedAmount > 0 
     ? Math.min((item.spentAmount / item.plannedAmount) * 100, 100)
     : 0;
   
   const remaining = item.plannedAmount - item.spentAmount;
-  const isOverBudget = item.spentAmount > item.plannedAmount;
+  const isOverBudget = !isIncome && item.spentAmount > item.plannedAmount;
 
   const handleDelete = async () => {
     await deleteBudgetItem(categoryId, item.id);
@@ -50,7 +52,8 @@ export function BudgetItemCard({ categoryId, item, type }: BudgetItemCardProps) 
                 {'$'}{item.spentAmount.toFixed(2)}
               </span>
               <span className="text-sm text-muted-foreground">
-                {'of $'}{item.plannedAmount.toFixed(2)}
+                {isIncome ? 'received of $' : 'of $'}
+                {item.plannedAmount.toFixed(2)}
               </span>
             </div>
           </div>
@@ -80,10 +83,16 @@ export function BudgetItemCard({ categoryId, item, type }: BudgetItemCardProps) 
         <div className="space-y-2">
           <Progress value={percentage} className="h-2" />
           <div className="flex justify-between text-sm">
-            <span className={isOverBudget ? 'text-red-600' : 'text-muted-foreground'}>
-              {isOverBudget ? 'Over by ' : 'Remaining: '}
-              {'$'}{Math.abs(remaining).toFixed(2)}
-            </span>
+            {isIncome ? (
+              <span className="text-muted-foreground">
+                {'Received: $'}{item.spentAmount.toFixed(2)}
+              </span>
+            ) : (
+              <span className={isOverBudget ? 'text-red-600' : 'text-muted-foreground'}>
+                {isOverBudget ? 'Over by ' : 'Remaining: '}
+                {'$'}{Math.abs(remaining).toFixed(2)}
+              </span>
+            )}
             <span className="text-muted-foreground">{percentage.toFixed(0)}{'%'}</span>
           </div>
         </div>
@@ -95,12 +104,12 @@ export function BudgetItemCard({ categoryId, item, type }: BudgetItemCardProps) 
             transactionType={type}
           />
           
-          {item.transactions.length > 0 && (
+          {transactions.length > 0 && (
             <div className="space-y-1 rounded-md border p-2">
               <p className="text-xs font-medium text-muted-foreground">
                 {'Recent Transactions'}
               </p>
-              {item.transactions.slice(-3).reverse().map((txn) => (
+              {transactions.slice(-3).reverse().map((txn) => (
                 <div key={txn.id} className="flex items-center justify-between text-sm">
                   <span className="truncate">{txn.description}</span>
                   <span className="font-medium">
@@ -108,9 +117,9 @@ export function BudgetItemCard({ categoryId, item, type }: BudgetItemCardProps) 
                   </span>
                 </div>
               ))}
-              {item.transactions.length > 3 && (
+              {transactions.length > 3 && (
                 <p className="text-xs text-muted-foreground">
-                  {'+'}{item.transactions.length - 3}{' more'}
+                  {'+'}{transactions.length - 3}{' more'}
                 </p>
               )}
             </div>

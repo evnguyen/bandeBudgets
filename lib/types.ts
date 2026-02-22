@@ -1,5 +1,13 @@
 // Core types for the budgeting app
 export type TransactionType = 'income' | 'expense';
+export type ExpenseGroup =
+  | 'Housing'
+  | 'Transportation'
+  | 'Food'
+  | 'Insurance'
+  | 'Giving'
+  | 'Savings'
+  | 'Personal';
 
 export interface Transaction {
   id: string;
@@ -25,6 +33,7 @@ export interface Category {
   id: string;
   name: string;
   type: TransactionType;
+  expenseGroup?: ExpenseGroup;
   budgetItems: BudgetItem[];
   order: number;
 }

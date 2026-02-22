@@ -36,10 +36,12 @@ export function AddTransactionDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!description.trim() || !amount) return;
+    const parsedAmount = parseFloat(amount);
+    if (Number.isNaN(parsedAmount)) return;
 
     await addTransaction(categoryId, budgetItemId, {
       budgetItemId,
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       description,
       date,
       type: transactionType,

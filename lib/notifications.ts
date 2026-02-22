@@ -11,6 +11,7 @@ export function showNotification(message: string, type: 'error' | 'success' = 'e
   if (notificationCallback) {
     notificationCallback(message, type);
   } else {
-    console.warn('[v0] Notification callback not set:', message, type);
+    console.warn('Notification callback not set:', message, type);
   }
 }
+

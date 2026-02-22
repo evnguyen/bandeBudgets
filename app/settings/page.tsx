@@ -21,7 +21,7 @@ export default function SettingsPage() {
       await signOut(auth);
       logout();
     } catch (error) {
-      console.error('[v0] Logout error:', error);
+      console.error('Logout error:', error);
     }
   };
 
@@ -141,3 +141,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

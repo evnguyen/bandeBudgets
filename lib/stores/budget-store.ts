@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Budget, Category, BudgetItem, Transaction } from '@/lib/types';
+import { Budget, Category, BudgetItem, Transaction, TransactionType } from '@/lib/types';
 import { 
   collection, 
   doc, 
@@ -13,6 +13,99 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { showNotification } from '@/lib/notifications';
+import { DEFAULT_EXPENSE_GROUP } from '@/lib/constants/budget-groups';
+
+const calculateTotals = (categories: Category[]) => {
+  let totalIncome = 0;
+  let totalExpenses = 0;
+
+  categories.forEach((cat) => {
+    const items = cat.budgetItems ?? [];
+    const planned = items.reduce(
+      (sum, item) => sum + (Number(item.plannedAmount) || 0),
+      0
+    );
+    if (cat.type === 'income') {
+      totalIncome += planned;
+    } else {
+      totalExpenses += planned;
+    }
+  });
+
+  return { totalIncome, totalExpenses };
+};
+
+const stripUndefined = <T>(value: T): T => {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefined(item)) as T;
+  }
+  if (value && typeof value === 'object') {
+    const result: Record<string, unknown> = {};
+    Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
+      if (val === undefined) return;
+      result[key] = stripUndefined(val);
+    });
+    return result as T;
+  }
+  return value;
+};
+
+const normalizeTransactionType = (value: TransactionType | undefined): TransactionType =>
+  value === 'income' ? 'income' : 'expense';
+
+const normalizeBudget = (budget: Budget): Budget => {
+  const categories = (budget.categories ?? []).map((cat, catIndex) => {
+    const normalizedType = normalizeTransactionType(cat.type);
+    const budgetItems = (cat.budgetItems ?? []).map((item, itemIndex) => {
+      const transactions = (item.transactions ?? []).map((txn) => ({
+        ...txn,
+        id: txn.id || `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        budgetItemId: txn.budgetItemId || item.id,
+        amount: Number(txn.amount) || 0,
+        description: txn.description || '',
+        date: txn.date || new Date().toISOString().slice(0, 10),
+        type: normalizedType,
+        createdAt: typeof txn.createdAt === 'number' ? txn.createdAt : Date.now(),
+      }));
+      const spentAmount = transactions.reduce((sum, txn) => sum + txn.amount, 0);
+
+      return {
+        ...item,
+        id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        categoryId: item.categoryId || cat.id,
+        name: item.name || 'Untitled Item',
+        plannedAmount: Number(item.plannedAmount) || 0,
+        spentAmount,
+        transactions,
+        order: typeof item.order === 'number' ? item.order : itemIndex,
+      };
+    });
+
+    return {
+      ...cat,
+      id: cat.id || `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: cat.name || 'Untitled Category',
+      type: normalizedType,
+      expenseGroup:
+        normalizedType === 'expense'
+          ? cat.expenseGroup || DEFAULT_EXPENSE_GROUP
+          : undefined,
+      budgetItems,
+      order: typeof cat.order === 'number' ? cat.order : catIndex,
+    };
+  });
+
+  const totals = calculateTotals(categories);
+
+  return {
+    ...budget,
+    categories,
+    totalIncome: totals.totalIncome,
+    totalExpenses: totals.totalExpenses,
+    createdAt: typeof budget.createdAt === 'number' ? budget.createdAt : Date.now(),
+    updatedAt: typeof budget.updatedAt === 'number' ? budget.updatedAt : Date.now(),
+  };
+};
 
 interface BudgetState {
   currentBudget: Budget | null;
@@ -40,29 +133,30 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   loadBudget: async (userId: string, month: string) => {
     set({ loading: true });
     const budgetId = `${userId}_${month}`;
-    console.log('[v0] Loading budget:', budgetId);
+    console.log('Loading budget:', budgetId);
 
     try {
       const budgetRef = doc(db, 'budgets', budgetId);
       const budgetSnap = await getDoc(budgetRef);
       
       if (budgetSnap.exists()) {
-        console.log('[v0] Budget found in Firebase, loading:', budgetSnap.data());
-        set({ currentBudget: budgetSnap.data() as Budget, loading: false });
+        console.log('Budget found in Firebase, loading:', budgetSnap.data());
+        const normalized = normalizeBudget(budgetSnap.data() as Budget);
+        set({ currentBudget: normalized, loading: false });
         return;
       }
     } catch (error) {
-      console.error('[v0] Error loading budget from Firebase, falling back to local:', error);
+      console.error('Error loading budget from Firebase, falling back to local:', error);
     }
 
-    console.log('[v0] Creating new budget:', budgetId);
+    console.log('Creating new budget:', budgetId);
     // Create a new budget locally (and try to persist to Firebase)
     await get().createBudget(userId, month);
   },
   
   createBudget: async (userId: string, month: string) => {
     const budgetId = `${userId}_${month}`;
-    console.log('[v0] Creating new budget:', budgetId);
+    console.log('Creating new budget:', budgetId);
     
     const newBudget: Budget = {
       id: budgetId,
@@ -77,32 +171,42 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
 
     // Always set locally first so the app is usable immediately
     set({ currentBudget: newBudget, loading: false });
-    console.log('[v0] Budget loaded locally:', newBudget.id);
+    console.log('Budget loaded locally:', newBudget.id);
 
     try {
       const budgetRef = doc(db, 'budgets', budgetId);
       await setDoc(budgetRef, newBudget);
-      console.log('[v0] Budget persisted to Firebase:', budgetId);
+      console.log('Budget persisted to Firebase:', budgetId);
     } catch (error) {
-      console.error('[v0] Error persisting budget to Firebase:', error);
+      console.error('Error persisting budget to Firebase:', error);
     }
   },
   
   addCategory: async (category) => {
     const state = get();
     if (!state.currentBudget) return;
-    
+    const normalizedType = normalizeTransactionType(category.type);
+    const expenseGroup =
+      normalizedType === 'expense'
+        ? category.expenseGroup || DEFAULT_EXPENSE_GROUP
+        : undefined;
+
     const newCategory: Category = {
       ...category,
+      type: normalizedType,
+      expenseGroup,
       id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       budgetItems: [],
     };
     
     const updatedCategories = [...state.currentBudget.categories, newCategory];
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -115,13 +219,26 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     if (!state.currentBudget) return;
     
     const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId ? { ...cat, ...updates } : cat
+      cat.id === categoryId
+        ? {
+            ...cat,
+            ...updates,
+            type: cat.type,
+            expenseGroup:
+              cat.type === 'expense'
+                ? updates.expenseGroup || cat.expenseGroup || DEFAULT_EXPENSE_GROUP
+                : undefined,
+          }
+        : cat
     );
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -136,11 +253,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     const updatedCategories = state.currentBudget.categories.filter(
       (cat) => cat.id !== categoryId
     );
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -151,7 +271,12 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   addBudgetItem: async (categoryId, item) => {
     const state = get();
     if (!state.currentBudget) return;
-    
+    const category = state.currentBudget.categories.find((cat) => cat.id === categoryId);
+    if (!category) {
+      showNotification('Category not found. Please refresh and try again.', 'error');
+      return;
+    }
+
     const newItem: BudgetItem = {
       ...item,
       id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -164,11 +289,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
         ? { ...cat, budgetItems: [...cat.budgetItems, newItem] }
         : cat
     );
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -190,11 +318,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -214,11 +345,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -229,6 +363,16 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   addTransaction: async (categoryId, itemId, transaction) => {
     const state = get();
     if (!state.currentBudget) return;
+
+    const category = state.currentBudget.categories.find((cat) => cat.id === categoryId);
+    if (!category) {
+      showNotification('Category not found. Please refresh and try again.', 'error');
+      return;
+    }
+    if (transaction.type !== category.type) {
+      showNotification('Transaction type does not match category type.', 'error');
+      return;
+    }
     
     const newTransaction: Transaction = {
       ...transaction,
@@ -258,27 +402,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
-    
-    // Recalculate totals
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    
-    updatedCategories.forEach((cat) => {
-      cat.budgetItems.forEach((item) => {
-        if (cat.type === 'income') {
-          totalIncome += item.spentAmount;
-        } else {
-          totalExpenses += item.spentAmount;
-        }
-      });
-    });
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
-        totalIncome,
-        totalExpenses,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -314,27 +445,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
-    
-    // Recalculate totals
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    
-    updatedCategories.forEach((cat) => {
-      cat.budgetItems.forEach((item) => {
-        if (cat.type === 'income') {
-          totalIncome += item.spentAmount;
-        } else {
-          totalExpenses += item.spentAmount;
-        }
-      });
-    });
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
-        totalIncome,
-        totalExpenses,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -370,27 +488,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
-    
-    // Recalculate totals
-    let totalIncome = 0;
-    let totalExpenses = 0;
-    
-    updatedCategories.forEach((cat) => {
-      cat.budgetItems.forEach((item) => {
-        if (cat.type === 'income') {
-          totalIncome += item.spentAmount;
-        } else {
-          totalExpenses += item.spentAmount;
-        }
-      });
-    });
-    
+
+    const totals = calculateTotals(updatedCategories);
     set({
       currentBudget: {
         ...state.currentBudget,
         categories: updatedCategories,
-        totalIncome,
-        totalExpenses,
+        totalIncome: totals.totalIncome,
+        totalExpenses: totals.totalExpenses,
         updatedAt: Date.now(),
       },
     });
@@ -404,12 +509,16 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     
     try {
       const budgetRef = doc(db, 'budgets', state.currentBudget.id);
-      await setDoc(budgetRef, state.currentBudget as any, { merge: true });
-      console.log('[v0] Budget saved to Firebase successfully');
+      const sanitizedBudget = stripUndefined(state.currentBudget);
+      await setDoc(budgetRef, sanitizedBudget as any, { merge: true });
+      console.log('Budget saved to Firebase successfully');
     } catch (error) {
-      // Firebase save failed — local state is still correct
-      console.error('[v0] Error saving budget to Firebase:', error);
+      // Firebase save failed -- local state is still correct
+      console.error('Error saving budget to Firebase:', error);
       showNotification('Failed to save changes to Firebase. Your data is saved locally.', 'error');
     }
   },
 }));
+
+
+

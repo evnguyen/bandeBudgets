@@ -14,11 +14,12 @@ export function getExpenseCategorySummaries(
   return categories
     .filter((category) => category.type === 'expense')
     .map((category) => {
-      const planned = category.budgetItems.reduce(
+      const budgetItems = category.budgetItems ?? [];
+      const planned = budgetItems.reduce(
         (sum, item) => sum + item.plannedAmount,
         0
       );
-      const spent = category.budgetItems.reduce(
+      const spent = budgetItems.reduce(
         (sum, item) => sum + item.spentAmount,
         0
       );

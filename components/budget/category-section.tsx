@@ -27,12 +27,13 @@ interface CategorySectionProps {
 export function CategorySection({ category }: CategorySectionProps) {
   const { deleteCategory } = useBudgetStore();
   const [isExpanded, setIsExpanded] = useState(true);
+  const budgetItems = category.budgetItems ?? [];
 
-  const totalPlanned = category.budgetItems.reduce(
+  const totalPlanned = budgetItems.reduce(
     (sum, item) => sum + item.plannedAmount,
     0
   );
-  const totalSpent = category.budgetItems.reduce(
+  const totalSpent = budgetItems.reduce(
     (sum, item) => sum + item.spentAmount,
     0
   );
@@ -48,15 +49,6 @@ export function CategorySection({ category }: CategorySectionProps) {
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-semibold">{category.name}</h3>
-              <span
-                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                  category.type === 'income'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                {category.type}
-              </span>
             </div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="text-xl font-bold">
@@ -107,7 +99,7 @@ export function CategorySection({ category }: CategorySectionProps) {
 
       {isExpanded && (
         <div className="p-4">
-          {category.budgetItems.length === 0 ? (
+          {budgetItems.length === 0 ? (
             <div className="py-8 text-center">
               <p className="text-muted-foreground">
                 {'No budget items yet. Add your first item to get started.'}
@@ -115,7 +107,7 @@ export function CategorySection({ category }: CategorySectionProps) {
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
-              {category.budgetItems.map((item) => (
+              {budgetItems.map((item) => (
                 <BudgetItemCard
                   key={item.id}
                   categoryId={category.id}

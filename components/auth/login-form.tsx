@@ -24,7 +24,7 @@ export function LoginForm() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      console.error('[v0] Login error:', err);
+      console.error('Login error:', err);
       setError(err.message || 'Failed to sign in. Please check your credentials.');
     } finally {
       setLoading(false);
@@ -39,7 +39,7 @@ export function LoginForm() {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      console.error('[v0] Signup error:', err);
+      console.error('Signup error:', err);
       setError(err.message || 'Failed to create account. Please try again.');
     } finally {
       setLoading(false);
@@ -141,3 +141,4 @@ export function LoginForm() {
     </div>
   );
 }
+

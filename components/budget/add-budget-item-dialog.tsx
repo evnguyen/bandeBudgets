@@ -28,6 +28,8 @@ export function AddBudgetItemDialog({ categoryId }: AddBudgetItemDialogProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !plannedAmount) return;
+    const parsedAmount = parseFloat(plannedAmount);
+    if (Number.isNaN(parsedAmount)) return;
 
     const category = currentBudget?.categories.find((c) => c.id === categoryId);
     const order = category?.budgetItems.length || 0;
@@ -35,7 +37,7 @@ export function AddBudgetItemDialog({ categoryId }: AddBudgetItemDialogProps) {
     await addBudgetItem(categoryId, {
       categoryId,
       name,
-      plannedAmount: parseFloat(plannedAmount),
+      plannedAmount: parsedAmount,
       order,
     });
 

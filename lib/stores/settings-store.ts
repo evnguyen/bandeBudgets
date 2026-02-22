@@ -45,7 +45,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Persist defaults to Firebase
       await setDoc(settingsRef, defaultSettings);
     } catch (error) {
-      console.error('[v0] Error loading settings from Firebase, using defaults:', error);
+      console.error('Error loading settings from Firebase, using defaults:', error);
     }
 
     // Fallback: apply defaults locally
@@ -70,9 +70,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const settingsRef = doc(db, 'settings', state.settings.userId);
       await setDoc(settingsRef, updatedSettings, { merge: true });
-      console.log('[v0] Primary color saved to Firebase:', color);
+      console.log('Primary color saved to Firebase:', color);
     } catch (error) {
-      console.error('[v0] Error persisting primary color to Firebase:', error);
+      console.error('Error persisting primary color to Firebase:', error);
       showNotification('Failed to save theme color to Firebase. Changes saved locally.', 'error');
     }
   },
@@ -94,9 +94,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     try {
       const settingsRef = doc(db, 'settings', state.settings.userId);
       await setDoc(settingsRef, updatedSettings, { merge: true });
-      console.log('[v0] Secondary color saved to Firebase:', color);
+      console.log('Secondary color saved to Firebase:', color);
     } catch (error) {
-      console.error('[v0] Error persisting secondary color to Firebase:', error);
+      console.error('Error persisting secondary color to Firebase:', error);
       showNotification('Failed to save theme color to Firebase. Changes saved locally.', 'error');
     }
   },
@@ -121,3 +121,4 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     }
   },
 }));
+

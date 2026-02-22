@@ -30,7 +30,7 @@ export default function RootLayout({
           <AuthProvider>
             <ThemeProvider>
               <AuthGuard>
-                <div className="flex min-h-screen">
+                <div className="flex min-h-screen flex-col lg:flex-row">
                   <Sidebar />
                   {children}
                 </div>

@@ -74,21 +74,21 @@ export function BudgetHeader() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground">{'Income'}</p>
+          <p className="text-sm font-medium text-muted-foreground">{'Total Income'}</p>
           <p className="mt-2 text-3xl font-bold text-green-600">
             {'$'}
             {(currentBudget?.totalIncome || 0).toFixed(2)}
           </p>
         </Card>
         <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground">{'Expenses'}</p>
+          <p className="text-sm font-medium text-muted-foreground">{'Total Expenses'}</p>
           <p className="mt-2 text-3xl font-bold text-red-600">
             {'$'}
             {(currentBudget?.totalExpenses || 0).toFixed(2)}
           </p>
         </Card>
         <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground">{'Remaining'}</p>
+          <p className="text-sm font-medium text-muted-foreground">{'Left to Budget'}</p>
           <p
             className={`mt-2 text-3xl font-bold ${
               remaining >= 0 ? 'text-green-600' : 'text-red-600'
