@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const SITE_PASSWORD = process.env.SITE_PASSWORD || 'admin';
+const SITE_PASSWORD = process.env.SITE_PASSWORD;
 const ACCESS_COOKIE = 'siteAccessGranted';
 const ERROR_COOKIE = 'siteAccessError';
 
@@ -32,6 +32,16 @@ export async function POST(request: NextRequest) {
   const redirectUrl = new URL(returnUrl, request.nextUrl.origin).href;
 
   const response = NextResponse.redirect(redirectUrl);
+  if (!SITE_PASSWORD) {
+    response.cookies.set(ERROR_COOKIE, '1', {
+      path: '/',
+      maxAge: 60,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+    });
+    response.cookies.delete(ACCESS_COOKIE);
+    return response;
+  }
 
   if (password === SITE_PASSWORD) {
     response.cookies.set(ACCESS_COOKIE, '1', {

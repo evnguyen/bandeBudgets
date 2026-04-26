@@ -5,6 +5,7 @@ import { CategorySection } from '@/components/budget/category-section';
 import { AddCategoryDialog } from '@/components/budget/add-category-dialog';
 import { BudgetChart } from '@/components/budget/budget-chart';
 import { BudgetSummaryTable } from '@/components/budget/budget-summary-table';
+import { BudgetHeader } from '@/components/budget/budget-header';
 import { DEFAULT_EXPENSE_GROUP, EXPENSE_GROUPS } from '@/lib/constants/budget-groups';
 
 export default function HomePage() {
@@ -37,9 +38,11 @@ export default function HomePage() {
       <div className="flex">
         {/* Main content */}
         <main className="flex-1">
-          <div className="grid gap-6 p-4 md:p-8 lg:grid-cols-3">
+          <div className="space-y-6 p-4 md:p-8">
+            <BudgetHeader />
+            <div className="grid gap-6 lg:grid-cols-3">
             {/* Left column - Categories list */}
-            <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-6">
               {/* Income Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -103,17 +106,18 @@ export default function HomePage() {
                   );
                 })}
               </div>
-              <AddCategoryDialog allowTypeSelection buttonLabel="Add Category" />
-            </div>
+                <AddCategoryDialog allowTypeSelection buttonLabel="Add Category" />
+              </div>
 
-            {/* Right column - Chart and Summary */}
-            <div className="space-y-6">
-              {currentBudget && (
-                <>
-                  <BudgetChart categories={currentBudget.categories} />
-                  <BudgetSummaryTable categories={currentBudget.categories} />
-                </>
-              )}
+              {/* Right column - Chart and Summary */}
+              <div className="space-y-6">
+                {currentBudget && (
+                  <>
+                    <BudgetChart categories={currentBudget.categories} />
+                    <BudgetSummaryTable categories={currentBudget.categories} />
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </main>

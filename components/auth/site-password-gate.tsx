@@ -1,28 +1,14 @@
 import type { ReactNode } from 'react';
-import { cookies, headers } from 'next/headers';
+import { cookies } from 'next/headers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
+import { ReturnUrlInput } from './return-url-input';
 
 const ACCESS_COOKIE = 'siteAccessGranted';
 const ERROR_COOKIE = 'siteAccessError';
-
-async function getReturnUrlFromHeaders(): Promise<string> {
-  const headerStore = await headers();
-  const referer = headerStore.get('referer');
-  if (!referer) {
-    return '/';
-  }
-
-  try {
-    const parsed = new URL(referer);
-    return `${parsed.pathname}${parsed.search}`;
-  } catch {
-    return '/';
-  }
-}
 
 export async function SitePasswordGate({ children }: { children: ReactNode }) {
   const cookieStore = await cookies();
@@ -33,8 +19,6 @@ export async function SitePasswordGate({ children }: { children: ReactNode }) {
   }
 
   const errorCookie = cookieStore.get(ERROR_COOKIE);
-
-  const returnUrl = await getReturnUrlFromHeaders();
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -48,7 +32,7 @@ export async function SitePasswordGate({ children }: { children: ReactNode }) {
         </CardHeader>
         <CardContent>
           <form method="post" action="/api/site-password" className="space-y-4">
-            <input type="hidden" name="returnUrl" value={returnUrl} />
+            <ReturnUrlInput />
             <div className="space-y-2">
               <Label htmlFor="site-password">{'Password'}</Label>
               <Input

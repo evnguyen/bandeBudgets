@@ -18,7 +18,7 @@ export function BudgetHeader() {
   };
 
   const getMonthString = (date: Date) => {
-    return date.toISOString().slice(0, 7);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
   };
 
   const handlePreviousMonth = () => {

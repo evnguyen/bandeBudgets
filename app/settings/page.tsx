@@ -8,8 +8,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ThemeColor } from '@/lib/types';
 import { Check } from 'lucide-react';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { ThemePreview } from '@/components/settings/theme-preview';
 
 export default function SettingsPage() {
@@ -18,8 +16,7 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      logout();
+      await logout();
     } catch (error) {
       console.error('Logout error:', error);
     }

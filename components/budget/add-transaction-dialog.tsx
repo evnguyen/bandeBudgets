@@ -22,6 +22,13 @@ interface AddTransactionDialogProps {
   transactionType: TransactionType;
 }
 
+const getTodayLocalDate = () => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
 export function AddTransactionDialog({
   categoryId,
   budgetItemId,
@@ -31,7 +38,7 @@ export function AddTransactionDialog({
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(getTodayLocalDate());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,17 +46,18 @@ export function AddTransactionDialog({
     const parsedAmount = parseFloat(amount);
     if (Number.isNaN(parsedAmount)) return;
 
-    await addTransaction(categoryId, budgetItemId, {
+    const saved = await addTransaction(categoryId, budgetItemId, {
       budgetItemId,
       amount: parsedAmount,
       description,
       date,
       type: transactionType,
     });
+    if (!saved) return;
 
     setDescription('');
     setAmount('');
-    setDate(new Date().toISOString().slice(0, 10));
+    setDate(getTodayLocalDate());
     setOpen(false);
   };
 

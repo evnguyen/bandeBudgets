@@ -53,6 +53,13 @@ const stripUndefined = <T>(value: T): T => {
 const normalizeTransactionType = (value: TransactionType | undefined): TransactionType =>
   value === 'income' ? 'income' : 'expense';
 
+const getTodayLocalDate = (): string => {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+};
+
 const normalizeBudget = (budget: Budget): Budget => {
   const categories = (budget.categories ?? []).map((cat, catIndex) => {
     const normalizedType = normalizeTransactionType(cat.type);
@@ -63,7 +70,7 @@ const normalizeBudget = (budget: Budget): Budget => {
         budgetItemId: txn.budgetItemId || item.id,
         amount: Number(txn.amount) || 0,
         description: txn.description || '',
-        date: txn.date || new Date().toISOString().slice(0, 10),
+        date: txn.date || getTodayLocalDate(),
         type: normalizedType,
         createdAt: typeof txn.createdAt === 'number' ? txn.createdAt : Date.now(),
       }));
@@ -120,7 +127,11 @@ interface BudgetState {
   addBudgetItem: (categoryId: string, item: Omit<BudgetItem, 'id' | 'transactions' | 'spentAmount'>) => Promise<void>;
   updateBudgetItem: (categoryId: string, itemId: string, updates: Partial<BudgetItem>) => Promise<void>;
   deleteBudgetItem: (categoryId: string, itemId: string) => Promise<void>;
-  addTransaction: (categoryId: string, itemId: string, transaction: Omit<Transaction, 'id' | 'createdAt'>) => Promise<void>;
+  addTransaction: (
+    categoryId: string,
+    itemId: string,
+    transaction: Omit<Transaction, 'id' | 'createdAt'>
+  ) => Promise<boolean>;
   updateTransaction: (categoryId: string, itemId: string, transactionId: string, updates: Partial<Transaction>) => Promise<void>;
   deleteTransaction: (categoryId: string, itemId: string, transactionId: string) => Promise<void>;
   saveBudgetToFirebase: () => Promise<void>;
@@ -362,16 +373,21 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   
   addTransaction: async (categoryId, itemId, transaction) => {
     const state = get();
-    if (!state.currentBudget) return;
+    if (!state.currentBudget) return false;
 
     const category = state.currentBudget.categories.find((cat) => cat.id === categoryId);
     if (!category) {
       showNotification('Category not found. Please refresh and try again.', 'error');
-      return;
+      return false;
+    }
+    const budgetItem = category.budgetItems.find((item) => item.id === itemId);
+    if (!budgetItem) {
+      showNotification('Budget item not found. Please refresh and try again.', 'error');
+      return false;
     }
     if (transaction.type !== category.type) {
       showNotification('Transaction type does not match category type.', 'error');
-      return;
+      return false;
     }
     
     const newTransaction: Transaction = {
@@ -415,11 +431,13 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
     });
     
     await get().saveBudgetToFirebase();
+    return true;
   },
   
   updateTransaction: async (categoryId, itemId, transactionId, updates) => {
     const state = get();
     if (!state.currentBudget) return;
+    let itemFound = false;
     
     const updatedCategories = state.currentBudget.categories.map((cat) =>
       cat.id === categoryId
@@ -427,6 +445,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
             ...cat,
             budgetItems: cat.budgetItems.map((item) => {
               if (item.id === itemId) {
+                itemFound = true;
                 const updatedTransactions = item.transactions.map((txn) =>
                   txn.id === transactionId ? { ...txn, ...updates } : txn
                 );
@@ -445,6 +464,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
+    if (!itemFound) {
+      showNotification('Budget item not found. Please refresh and try again.', 'error');
+      return;
+    }
 
     const totals = calculateTotals(updatedCategories);
     set({
@@ -463,6 +486,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
   deleteTransaction: async (categoryId, itemId, transactionId) => {
     const state = get();
     if (!state.currentBudget) return;
+    let itemFound = false;
     
     const updatedCategories = state.currentBudget.categories.map((cat) =>
       cat.id === categoryId
@@ -470,6 +494,7 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
             ...cat,
             budgetItems: cat.budgetItems.map((item) => {
               if (item.id === itemId) {
+                itemFound = true;
                 const updatedTransactions = item.transactions.filter(
                   (txn) => txn.id !== transactionId
                 );
@@ -488,6 +513,10 @@ export const useBudgetStore = create<BudgetState>((set, get) => ({
           }
         : cat
     );
+    if (!itemFound) {
+      showNotification('Budget item not found. Please refresh and try again.', 'error');
+      return;
+    }
 
     const totals = calculateTotals(updatedCategories);
     set({
