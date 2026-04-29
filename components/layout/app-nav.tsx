@@ -1,49 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, Wallet, Moon, Sun, Menu, Settings, HelpCircle } from 'lucide-react';
+import { LogOut, Wallet, Moon, Sun, Menu, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { useDarkMode } from '@/hooks/use-dark-mode';
 
 const navItems = [
   { label: 'Budget', href: '/', icon: Wallet },
   { label: 'Settings', href: '/settings', icon: Settings },
-  { label: 'Help', href: '#', icon: HelpCircle },
-];
+] as const;
 
-export function AppNav() {
-  const { logout } = useAuthStore();
+export const AppNav = () => {
   const pathname = usePathname();
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const logout = useAuthStore((s) => s.logout);
+  const { isDark, toggle, mounted } = useDarkMode();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const isDarkMode =
-      localStorage.getItem('theme') === 'dark' ||
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setIsDark(isDarkMode);
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
 
   const handleLogout = async () => {
     try {
@@ -65,7 +41,7 @@ export function AppNav() {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-4">
               <div className="mb-6">
-                <h2 className="text-xl font-bold text-primary">{'Budget App'}</h2>
+                <h2 className="text-xl font-bold text-primary">Budget App</h2>
               </div>
               <nav className="space-y-1">
                 {navItems.map(({ label, href, icon: Icon }) => {
@@ -75,11 +51,12 @@ export function AppNav() {
                       key={href}
                       href={href}
                       onClick={() => setOpen(false)}
+                      aria-current={isActive ? 'page' : undefined}
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                         isActive
                           ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -88,10 +65,12 @@ export function AppNav() {
                   );
                 })}
               </nav>
-              <div className="mt-6 border-t pt-4 space-y-1">
+              <div className="mt-6 space-y-1 border-t pt-4">
                 {mounted && (
                   <button
-                    onClick={toggleTheme}
+                    type="button"
+                    onClick={toggle}
+                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                     className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   >
                     {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -99,18 +78,20 @@ export function AppNav() {
                   </button>
                 )}
                 <button
+                  type="button"
                   onClick={handleLogout}
+                  aria-label="Log out"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                 >
                   <LogOut className="h-5 w-5" />
-                  {'Logout'}
+                  Logout
                 </button>
               </div>
             </SheetContent>
           </Sheet>
-          <Link href="/" className="flex items-center gap-2 font-bold text-lg">
+          <Link href="/" className="flex items-center gap-2 text-lg font-bold">
             <Wallet className="h-5 w-5 text-primary" />
-            {'Budget App'}
+            Budget App
           </Link>
         </div>
         <div className="flex items-center gap-1">
@@ -118,17 +99,22 @@ export function AppNav() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={toggleTheme}
-              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={toggle}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
           )}
-          <Button variant="ghost" size="icon" onClick={handleLogout} title="Logout">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            aria-label="Log out"
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
     </nav>
   );
-}
+};

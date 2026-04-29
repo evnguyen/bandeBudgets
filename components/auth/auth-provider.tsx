@@ -8,19 +8,17 @@ import { useSettingsStore } from '@/lib/stores/settings-store';
 import { useBudgetStore } from '@/lib/stores/budget-store';
 import { useToast } from '@/hooks/use-toast';
 import { setNotificationCallback } from '@/lib/notifications';
+import { getMonthString } from '@/lib/dates';
 
-const getLocalMonthString = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser, setLoading } = useAuthStore();
-  const { loadSettings } = useSettingsStore();
-  const { loadBudget } = useBudgetStore();
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const setUser = useAuthStore((s) => s.setUser);
+  const setLoading = useAuthStore((s) => s.setLoading);
+  const loadSettings = useSettingsStore((s) => s.loadSettings);
+  const loadBudget = useBudgetStore((s) => s.loadBudget);
   const { toast } = useToast();
 
-  // Setup notification callback for Zustand stores
   useEffect(() => {
-    setNotificationCallback((message: string, type: 'error' | 'success') => {
+    setNotificationCallback((message, type) => {
       toast({
         description: message,
         variant: type === 'error' ? 'destructive' : 'default',
@@ -31,24 +29,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-
       if (!user) {
         setLoading(false);
         return;
       }
-
       try {
-        const currentMonth = getLocalMonthString(new Date());
-        // Load user settings and current month budget
         await loadSettings(user.uid);
-        await loadBudget(user.uid, currentMonth);
+        await loadBudget(user.uid, getMonthString(new Date()));
       } finally {
         setLoading(false);
       }
     });
-
     return () => unsubscribe();
   }, [setUser, setLoading, loadSettings, loadBudget]);
 
   return <>{children}</>;
-}
+};

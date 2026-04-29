@@ -2,8 +2,12 @@
 
 import { useState } from 'react';
 import { useBudgetStore } from '@/lib/stores/budget-store';
-import { ExpenseGroup, TransactionType } from '@/lib/types';
-import { DEFAULT_EXPENSE_GROUP, EXPENSE_GROUPS } from '@/lib/constants/budget-groups';
+import { TransactionType } from '@/lib/constants/transactions';
+import {
+  ExpenseGroup,
+  EXPENSE_GROUPS,
+  DEFAULT_EXPENSE_GROUP,
+} from '@/lib/constants/budget-groups';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +19,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Select,
   SelectContent,
@@ -24,105 +27,79 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus } from 'lucide-react';
+import { TRANSACTION_TYPES } from '@/lib/constants/transactions';
 
 interface AddCategoryDialogProps {
-  type?: TransactionType;
-  expenseGroup?: ExpenseGroup;
+  type: TransactionType;
   buttonLabel?: string;
-  allowTypeSelection?: boolean;
 }
 
-export function AddCategoryDialog({
+export const AddCategoryDialog = ({
   type,
-  expenseGroup,
-  buttonLabel = 'Add Category',
-  allowTypeSelection = false,
-}: AddCategoryDialogProps) {
-  const { addCategory, currentBudget } = useBudgetStore();
+  buttonLabel = 'Add category',
+}: AddCategoryDialogProps) => {
+  const addCategory = useBudgetStore((s) => s.addCategory);
+  const currentBudget = useBudgetStore((s) => s.currentBudget);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
-  const [selectedType, setSelectedType] = useState<TransactionType>(type || 'expense');
-  const [selectedExpenseGroup, setSelectedExpenseGroup] = useState<ExpenseGroup>(
-    expenseGroup || DEFAULT_EXPENSE_GROUP
-  );
+  const [expenseGroup, setExpenseGroup] = useState<ExpenseGroup>(DEFAULT_EXPENSE_GROUP);
+
+  const isExpense = type === TRANSACTION_TYPES.EXPENSE;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const order = currentBudget?.categories.length || 0;
-    const finalType = allowTypeSelection ? selectedType : (type || 'expense');
-    const finalExpenseGroup =
-      finalType === 'expense'
-        ? selectedExpenseGroup || DEFAULT_EXPENSE_GROUP
-        : undefined;
-
-    await addCategory({ name, type: finalType, expenseGroup: finalExpenseGroup, order });
+    const order = currentBudget?.categories.length ?? 0;
+    await addCategory({
+      name,
+      type,
+      expenseGroup: isExpense ? expenseGroup : null,
+      order,
+    });
 
     setName('');
-    setSelectedType(type || 'expense');
-    setSelectedExpenseGroup(expenseGroup || DEFAULT_EXPENSE_GROUP);
+    setExpenseGroup(DEFAULT_EXPENSE_GROUP);
     setOpen(false);
   };
-
-  const activeType = allowTypeSelection ? selectedType : (type || 'expense');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           <Plus className="h-4 w-4" />
           {buttonLabel}
         </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{'Add New Category'}</DialogTitle>
+          <DialogTitle>Add New Category</DialogTitle>
           <DialogDescription>
-            {activeType === 'income'
-              ? 'Create a new income category.'
-              : 'Create a new expense category.'}
+            {isExpense
+              ? 'Create a new expense category.'
+              : 'Create a new income category.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="category-name">{'Category Name'}</Label>
+            <Label htmlFor="category-name">Category Name</Label>
             <Input
               id="category-name"
-              placeholder="e.g., Housing, Transportation"
+              placeholder="e.g., Housing, Salary"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
             />
           </div>
-          {allowTypeSelection && (
+          {isExpense && (
             <div className="space-y-2">
-              <Label>{'Type'}</Label>
-              <RadioGroup
-                value={selectedType}
-                onValueChange={(value) => setSelectedType(value as TransactionType)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="income" id="income" />
-                  <Label htmlFor="income" className="font-normal">
-                    {'Income'}
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="expense" id="expense" />
-                  <Label htmlFor="expense" className="font-normal">
-                    {'Expense'}
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-          {(allowTypeSelection ? selectedType : type) === 'expense' && (
-            <div className="space-y-2">
-              <Label>{'Expense Group'}</Label>
+              <Label>Expense Group</Label>
               <Select
-                value={selectedExpenseGroup}
-                onValueChange={(value) => setSelectedExpenseGroup(value as ExpenseGroup)}
+                value={expenseGroup}
+                onValueChange={(value) => setExpenseGroup(value as ExpenseGroup)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a group" />
@@ -138,10 +115,10 @@ export function AddCategoryDialog({
             </div>
           )}
           <Button type="submit" className="w-full">
-            {'Create Category'}
+            Create Category
           </Button>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};

@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { COOKIE_KEYS, COOKIE_MAX_AGE } from '@/lib/constants/keys';
 
 const SITE_PASSWORD = process.env.SITE_PASSWORD;
-const ACCESS_COOKIE = 'siteAccessGranted';
-const ERROR_COOKIE = 'siteAccessError';
+const isProduction = process.env.NODE_ENV === 'production';
 
-function sanitizeReturnUrl(returnUrl: string | null): string {
-  if (!returnUrl) {
-    return '/';
-  }
+const sanitizeReturnUrl = (returnUrl: string | null): string => {
+  if (!returnUrl) return '/';
 
   if (returnUrl.startsWith('http://') || returnUrl.startsWith('https://')) {
     try {
@@ -18,49 +16,38 @@ function sanitizeReturnUrl(returnUrl: string | null): string {
     }
   }
 
-  if (returnUrl.startsWith('/')) {
-    return returnUrl;
-  }
-
-  return `/${returnUrl}`;
-}
+  return returnUrl.startsWith('/') ? returnUrl : `/${returnUrl}`;
+};
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
   const password = String(formData.get('password') ?? '');
   const returnUrl = sanitizeReturnUrl(String(formData.get('returnUrl') ?? '/'));
   const redirectUrl = new URL(returnUrl, request.nextUrl.origin).href;
-
   const response = NextResponse.redirect(redirectUrl);
-  if (!SITE_PASSWORD) {
-    response.cookies.set(ERROR_COOKIE, '1', {
+
+  const setError = () => {
+    response.cookies.set(COOKIE_KEYS.ACCESS_ERROR, '1', {
       path: '/',
-      maxAge: 60,
+      maxAge: COOKIE_MAX_AGE.ERROR,
       sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
     });
-    response.cookies.delete(ACCESS_COOKIE);
+    response.cookies.delete(COOKIE_KEYS.ACCESS_GRANTED);
+  };
+
+  if (!SITE_PASSWORD || password !== SITE_PASSWORD) {
+    setError();
     return response;
   }
 
-  if (password === SITE_PASSWORD) {
-    response.cookies.set(ACCESS_COOKIE, '1', {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 365,
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-    });
-    response.cookies.delete(ERROR_COOKIE);
-    return response;
-  }
-
-  response.cookies.set(ERROR_COOKIE, '1', {
+  response.cookies.set(COOKIE_KEYS.ACCESS_GRANTED, '1', {
     path: '/',
-    maxAge: 60,
+    maxAge: COOKIE_MAX_AGE.ACCESS,
+    httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: isProduction,
   });
-  response.cookies.delete(ACCESS_COOKIE);
+  response.cookies.delete(COOKIE_KEYS.ACCESS_ERROR);
   return response;
 }

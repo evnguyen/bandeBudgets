@@ -1,553 +1,397 @@
 import { create } from 'zustand';
-import { Budget, Category, BudgetItem, Transaction, TransactionType } from '@/lib/types';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  getDocs
-} from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { Budget, Category, BudgetItem, Transaction } from '@/lib/types';
 import { db } from '@/lib/firebase';
 import { showNotification } from '@/lib/notifications';
+import { TRANSACTION_TYPES, TransactionType } from '@/lib/constants/transactions';
 import { DEFAULT_EXPENSE_GROUP } from '@/lib/constants/budget-groups';
+import { COLLECTIONS, ID_PREFIXES } from '@/lib/constants/firebase';
+import { genId } from '@/lib/ids';
+import { getTodayLocalDate, getMonthString } from '@/lib/dates';
 
 const calculateTotals = (categories: Category[]) => {
   let totalIncome = 0;
   let totalExpenses = 0;
-
-  categories.forEach((cat) => {
-    const items = cat.budgetItems ?? [];
-    const planned = items.reduce(
+  for (const cat of categories) {
+    const planned = cat.budgetItems.reduce(
       (sum, item) => sum + (Number(item.plannedAmount) || 0),
-      0
+      0,
     );
-    if (cat.type === 'income') {
+    if (cat.type === TRANSACTION_TYPES.INCOME) {
       totalIncome += planned;
     } else {
       totalExpenses += planned;
     }
-  });
-
+  }
   return { totalIncome, totalExpenses };
 };
 
-const stripUndefined = <T>(value: T): T => {
-  if (Array.isArray(value)) {
-    return value.map((item) => stripUndefined(item)) as T;
-  }
-  if (value && typeof value === 'object') {
-    const result: Record<string, unknown> = {};
-    Object.entries(value as Record<string, unknown>).forEach(([key, val]) => {
-      if (val === undefined) return;
-      result[key] = stripUndefined(val);
-    });
-    return result as T;
-  }
-  return value;
+const recalcSpent = (item: BudgetItem): BudgetItem => ({
+  ...item,
+  spentAmount: item.transactions.reduce((sum, t) => sum + t.amount, 0),
+});
+
+const normalizeType = (value: TransactionType | undefined): TransactionType =>
+  value === TRANSACTION_TYPES.INCOME
+    ? TRANSACTION_TYPES.INCOME
+    : TRANSACTION_TYPES.EXPENSE;
+
+const normalizeTransaction = (
+  txn: Partial<Transaction>,
+  itemId: string,
+  type: TransactionType,
+): Transaction => ({
+  id: txn.id ?? genId(ID_PREFIXES.TRANSACTION),
+  budgetItemId: txn.budgetItemId ?? itemId,
+  amount: Number(txn.amount) || 0,
+  description: txn.description ?? '',
+  date: txn.date ?? getTodayLocalDate(),
+  type,
+  createdAt: txn.createdAt ?? Date.now(),
+});
+
+const normalizeItem = (
+  item: Partial<BudgetItem>,
+  catId: string,
+  type: TransactionType,
+  index: number,
+): BudgetItem => {
+  const transactions = (item.transactions ?? []).map((t) =>
+    normalizeTransaction(t, item.id ?? '', type),
+  );
+  return {
+    id: item.id ?? genId(ID_PREFIXES.ITEM),
+    categoryId: item.categoryId ?? catId,
+    name: item.name ?? 'Untitled Item',
+    plannedAmount: Number(item.plannedAmount) || 0,
+    spentAmount: transactions.reduce((sum, t) => sum + t.amount, 0),
+    transactions,
+    order: item.order ?? index,
+  };
 };
 
-const normalizeTransactionType = (value: TransactionType | undefined): TransactionType =>
-  value === 'income' ? 'income' : 'expense';
-
-const getTodayLocalDate = (): string => {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
+const normalizeCategory = (cat: Partial<Category>, index: number): Category => {
+  const type = normalizeType(cat.type);
+  const id = cat.id ?? genId(ID_PREFIXES.CATEGORY);
+  return {
+    id,
+    name: cat.name ?? 'Untitled Category',
+    type,
+    expenseGroup:
+      type === TRANSACTION_TYPES.EXPENSE
+        ? cat.expenseGroup ?? DEFAULT_EXPENSE_GROUP
+        : null,
+    budgetItems: (cat.budgetItems ?? []).map((item, i) =>
+      normalizeItem(item, id, type, i),
+    ),
+    order: cat.order ?? index,
+  };
 };
 
 const normalizeBudget = (budget: Budget): Budget => {
-  const categories = (budget.categories ?? []).map((cat, catIndex) => {
-    const normalizedType = normalizeTransactionType(cat.type);
-    const budgetItems = (cat.budgetItems ?? []).map((item, itemIndex) => {
-      const transactions = (item.transactions ?? []).map((txn) => ({
-        ...txn,
-        id: txn.id || `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        budgetItemId: txn.budgetItemId || item.id,
-        amount: Number(txn.amount) || 0,
-        description: txn.description || '',
-        date: txn.date || getTodayLocalDate(),
-        type: normalizedType,
-        createdAt: typeof txn.createdAt === 'number' ? txn.createdAt : Date.now(),
-      }));
-      const spentAmount = transactions.reduce((sum, txn) => sum + txn.amount, 0);
-
-      return {
-        ...item,
-        id: item.id || `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        categoryId: item.categoryId || cat.id,
-        name: item.name || 'Untitled Item',
-        plannedAmount: Number(item.plannedAmount) || 0,
-        spentAmount,
-        transactions,
-        order: typeof item.order === 'number' ? item.order : itemIndex,
-      };
-    });
-
-    return {
-      ...cat,
-      id: cat.id || `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: cat.name || 'Untitled Category',
-      type: normalizedType,
-      expenseGroup:
-        normalizedType === 'expense'
-          ? cat.expenseGroup || DEFAULT_EXPENSE_GROUP
-          : undefined,
-      budgetItems,
-      order: typeof cat.order === 'number' ? cat.order : catIndex,
-    };
-  });
-
+  const categories = (budget.categories ?? []).map(normalizeCategory);
   const totals = calculateTotals(categories);
-
   return {
     ...budget,
     categories,
     totalIncome: totals.totalIncome,
     totalExpenses: totals.totalExpenses,
-    createdAt: typeof budget.createdAt === 'number' ? budget.createdAt : Date.now(),
-    updatedAt: typeof budget.updatedAt === 'number' ? budget.updatedAt : Date.now(),
+    createdAt: budget.createdAt ?? Date.now(),
+    updatedAt: budget.updatedAt ?? Date.now(),
   };
 };
+
+const withTotals = (budget: Budget, categories: Category[]): Budget => ({
+  ...budget,
+  categories,
+  ...calculateTotals(categories),
+  updatedAt: Date.now(),
+});
+
+const mapCategory = (
+  budget: Budget,
+  categoryId: string,
+  fn: (cat: Category) => Category,
+): Budget =>
+  withTotals(
+    budget,
+    budget.categories.map((cat) => (cat.id === categoryId ? fn(cat) : cat)),
+  );
+
+const mapItem = (
+  budget: Budget,
+  categoryId: string,
+  itemId: string,
+  fn: (item: BudgetItem) => BudgetItem,
+): Budget =>
+  mapCategory(budget, categoryId, (cat) => ({
+    ...cat,
+    budgetItems: cat.budgetItems.map((item) => (item.id === itemId ? fn(item) : item)),
+  }));
 
 interface BudgetState {
   currentBudget: Budget | null;
   loading: boolean;
-  
-  // Actions
   loadBudget: (userId: string, month: string) => Promise<void>;
-  createBudget: (userId: string, month: string) => Promise<void>;
-  addCategory: (category: Omit<Category, 'id' | 'budgetItems'>) => Promise<void>;
+  setMonth: (userId: string, date: Date) => Promise<void>;
+  addCategory: (
+    category: Omit<Category, 'id' | 'budgetItems' | 'expenseGroup'> & {
+      expenseGroup?: Category['expenseGroup'];
+    },
+  ) => Promise<void>;
   updateCategory: (categoryId: string, updates: Partial<Category>) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<void>;
-  addBudgetItem: (categoryId: string, item: Omit<BudgetItem, 'id' | 'transactions' | 'spentAmount'>) => Promise<void>;
-  updateBudgetItem: (categoryId: string, itemId: string, updates: Partial<BudgetItem>) => Promise<void>;
+  addBudgetItem: (
+    categoryId: string,
+    item: Omit<BudgetItem, 'id' | 'transactions' | 'spentAmount'>,
+  ) => Promise<void>;
+  updateBudgetItem: (
+    categoryId: string,
+    itemId: string,
+    updates: Partial<BudgetItem>,
+  ) => Promise<void>;
   deleteBudgetItem: (categoryId: string, itemId: string) => Promise<void>;
   addTransaction: (
     categoryId: string,
     itemId: string,
-    transaction: Omit<Transaction, 'id' | 'createdAt'>
+    transaction: Omit<Transaction, 'id' | 'createdAt'>,
   ) => Promise<boolean>;
-  updateTransaction: (categoryId: string, itemId: string, transactionId: string, updates: Partial<Transaction>) => Promise<void>;
-  deleteTransaction: (categoryId: string, itemId: string, transactionId: string) => Promise<void>;
+  updateTransaction: (
+    categoryId: string,
+    itemId: string,
+    transactionId: string,
+    updates: Partial<Transaction>,
+  ) => Promise<void>;
+  deleteTransaction: (
+    categoryId: string,
+    itemId: string,
+    transactionId: string,
+  ) => Promise<void>;
   saveBudgetToFirebase: () => Promise<void>;
 }
 
-export const useBudgetStore = create<BudgetState>((set, get) => ({
-  currentBudget: null,
-  loading: false,
-  
-  loadBudget: async (userId: string, month: string) => {
-    set({ loading: true });
-    const budgetId = `${userId}_${month}`;
-    console.log('Loading budget:', budgetId);
+const createNewBudget = (userId: string, month: string): Budget => ({
+  id: `${userId}_${month}`,
+  userId,
+  month,
+  categories: [],
+  totalIncome: 0,
+  totalExpenses: 0,
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
 
-    try {
-      const budgetRef = doc(db, 'budgets', budgetId);
-      const budgetSnap = await getDoc(budgetRef);
-      
-      if (budgetSnap.exists()) {
-        console.log('Budget found in Firebase, loading:', budgetSnap.data());
-        const normalized = normalizeBudget(budgetSnap.data() as Budget);
-        set({ currentBudget: normalized, loading: false });
+export const useBudgetStore = create<BudgetState>((set, get) => {
+  const persistAndUpdate = async (budget: Budget) => {
+    set({ currentBudget: budget });
+    await get().saveBudgetToFirebase();
+  };
+
+  return {
+    currentBudget: null,
+    loading: false,
+
+    loadBudget: async (userId, month) => {
+      set({ loading: true });
+      const budgetId = `${userId}_${month}`;
+      try {
+        const ref = doc(db, COLLECTIONS.BUDGETS, budgetId);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          set({
+            currentBudget: normalizeBudget(snap.data() as Budget),
+            loading: false,
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error loading budget:', error);
+      }
+
+      const newBudget = createNewBudget(userId, month);
+      set({ currentBudget: newBudget, loading: false });
+      try {
+        await setDoc(doc(db, COLLECTIONS.BUDGETS, budgetId), newBudget);
+      } catch (error) {
+        console.error('Error creating budget:', error);
+      }
+    },
+
+    setMonth: async (userId, date) => {
+      await get().loadBudget(userId, getMonthString(date));
+    },
+
+    addCategory: async (category) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      const type = normalizeType(category.type);
+      const newCategory: Category = {
+        id: genId(ID_PREFIXES.CATEGORY),
+        name: category.name,
+        type,
+        expenseGroup:
+          type === TRANSACTION_TYPES.EXPENSE
+            ? category.expenseGroup ?? DEFAULT_EXPENSE_GROUP
+            : null,
+        budgetItems: [],
+        order: category.order,
+      };
+      await persistAndUpdate(
+        withTotals(budget, [...budget.categories, newCategory]),
+      );
+    },
+
+    updateCategory: async (categoryId, updates) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      const updated = mapCategory(budget, categoryId, (cat) => ({
+        ...cat,
+        ...updates,
+        type: cat.type,
+        expenseGroup:
+          cat.type === TRANSACTION_TYPES.EXPENSE
+            ? updates.expenseGroup ?? cat.expenseGroup ?? DEFAULT_EXPENSE_GROUP
+            : null,
+      }));
+      await persistAndUpdate(updated);
+    },
+
+    deleteCategory: async (categoryId) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      await persistAndUpdate(
+        withTotals(
+          budget,
+          budget.categories.filter((cat) => cat.id !== categoryId),
+        ),
+      );
+    },
+
+    addBudgetItem: async (categoryId, item) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      const exists = budget.categories.some((c) => c.id === categoryId);
+      if (!exists) {
+        showNotification('Category not found. Please refresh and try again.', 'error');
         return;
       }
-    } catch (error) {
-      console.error('Error loading budget from Firebase, falling back to local:', error);
-    }
+      const newItem: BudgetItem = {
+        ...item,
+        id: genId(ID_PREFIXES.ITEM),
+        transactions: [],
+        spentAmount: 0,
+      };
+      await persistAndUpdate(
+        mapCategory(budget, categoryId, (cat) => ({
+          ...cat,
+          budgetItems: [...cat.budgetItems, newItem],
+        })),
+      );
+    },
 
-    console.log('Creating new budget:', budgetId);
-    // Create a new budget locally (and try to persist to Firebase)
-    await get().createBudget(userId, month);
-  },
-  
-  createBudget: async (userId: string, month: string) => {
-    const budgetId = `${userId}_${month}`;
-    console.log('Creating new budget:', budgetId);
-    
-    const newBudget: Budget = {
-      id: budgetId,
-      userId,
-      month,
-      categories: [],
-      totalIncome: 0,
-      totalExpenses: 0,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-    };
+    updateBudgetItem: async (categoryId, itemId, updates) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      await persistAndUpdate(
+        mapItem(budget, categoryId, itemId, (item) => ({ ...item, ...updates })),
+      );
+    },
 
-    // Always set locally first so the app is usable immediately
-    set({ currentBudget: newBudget, loading: false });
-    console.log('Budget loaded locally:', newBudget.id);
+    deleteBudgetItem: async (categoryId, itemId) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      await persistAndUpdate(
+        mapCategory(budget, categoryId, (cat) => ({
+          ...cat,
+          budgetItems: cat.budgetItems.filter((item) => item.id !== itemId),
+        })),
+      );
+    },
 
-    try {
-      const budgetRef = doc(db, 'budgets', budgetId);
-      await setDoc(budgetRef, newBudget);
-      console.log('Budget persisted to Firebase:', budgetId);
-    } catch (error) {
-      console.error('Error persisting budget to Firebase:', error);
-    }
-  },
-  
-  addCategory: async (category) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    const normalizedType = normalizeTransactionType(category.type);
-    const expenseGroup =
-      normalizedType === 'expense'
-        ? category.expenseGroup || DEFAULT_EXPENSE_GROUP
-        : undefined;
+    addTransaction: async (categoryId, itemId, transaction) => {
+      const budget = get().currentBudget;
+      if (!budget) return false;
 
-    const newCategory: Category = {
-      ...category,
-      type: normalizedType,
-      expenseGroup,
-      id: `cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      budgetItems: [],
-    };
-    
-    const updatedCategories = [...state.currentBudget.categories, newCategory];
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  updateCategory: async (categoryId, updates) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            ...updates,
-            type: cat.type,
-            expenseGroup:
-              cat.type === 'expense'
-                ? updates.expenseGroup || cat.expenseGroup || DEFAULT_EXPENSE_GROUP
-                : undefined,
-          }
-        : cat
-    );
+      const category = budget.categories.find((c) => c.id === categoryId);
+      if (!category) {
+        showNotification('Category not found. Please refresh and try again.', 'error');
+        return false;
+      }
+      const item = category.budgetItems.find((i) => i.id === itemId);
+      if (!item) {
+        showNotification('Budget item not found. Please refresh and try again.', 'error');
+        return false;
+      }
+      if (transaction.type !== category.type) {
+        showNotification('Transaction type does not match category type.', 'error');
+        return false;
+      }
 
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  deleteCategory: async (categoryId) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    
-    const updatedCategories = state.currentBudget.categories.filter(
-      (cat) => cat.id !== categoryId
-    );
+      const newTransaction: Transaction = {
+        ...transaction,
+        id: genId(ID_PREFIXES.TRANSACTION),
+        createdAt: Date.now(),
+      };
 
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  addBudgetItem: async (categoryId, item) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    const category = state.currentBudget.categories.find((cat) => cat.id === categoryId);
-    if (!category) {
-      showNotification('Category not found. Please refresh and try again.', 'error');
-      return;
-    }
+      await persistAndUpdate(
+        mapItem(budget, categoryId, itemId, (i) =>
+          recalcSpent({ ...i, transactions: [...i.transactions, newTransaction] }),
+        ),
+      );
+      return true;
+    },
 
-    const newItem: BudgetItem = {
-      ...item,
-      id: `item_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      transactions: [],
-      spentAmount: 0,
-    };
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? { ...cat, budgetItems: [...cat.budgetItems, newItem] }
-        : cat
-    );
+    updateTransaction: async (categoryId, itemId, transactionId, updates) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      let found = false;
+      const updated = mapItem(budget, categoryId, itemId, (item) => {
+        found = true;
+        return recalcSpent({
+          ...item,
+          transactions: item.transactions.map((t) =>
+            t.id === transactionId ? { ...t, ...updates } : t,
+          ),
+        });
+      });
+      if (!found) {
+        showNotification('Budget item not found. Please refresh and try again.', 'error');
+        return;
+      }
+      await persistAndUpdate(updated);
+    },
 
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  updateBudgetItem: async (categoryId, itemId, updates) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            budgetItems: cat.budgetItems.map((item) =>
-              item.id === itemId ? { ...item, ...updates } : item
-            ),
-          }
-        : cat
-    );
+    deleteTransaction: async (categoryId, itemId, transactionId) => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      let found = false;
+      const updated = mapItem(budget, categoryId, itemId, (item) => {
+        found = true;
+        return recalcSpent({
+          ...item,
+          transactions: item.transactions.filter((t) => t.id !== transactionId),
+        });
+      });
+      if (!found) {
+        showNotification('Budget item not found. Please refresh and try again.', 'error');
+        return;
+      }
+      await persistAndUpdate(updated);
+    },
 
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  deleteBudgetItem: async (categoryId, itemId) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            budgetItems: cat.budgetItems.filter((item) => item.id !== itemId),
-          }
-        : cat
-    );
-
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  addTransaction: async (categoryId, itemId, transaction) => {
-    const state = get();
-    if (!state.currentBudget) return false;
-
-    const category = state.currentBudget.categories.find((cat) => cat.id === categoryId);
-    if (!category) {
-      showNotification('Category not found. Please refresh and try again.', 'error');
-      return false;
-    }
-    const budgetItem = category.budgetItems.find((item) => item.id === itemId);
-    if (!budgetItem) {
-      showNotification('Budget item not found. Please refresh and try again.', 'error');
-      return false;
-    }
-    if (transaction.type !== category.type) {
-      showNotification('Transaction type does not match category type.', 'error');
-      return false;
-    }
-    
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      createdAt: Date.now(),
-    };
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            budgetItems: cat.budgetItems.map((item) => {
-              if (item.id === itemId) {
-                const updatedTransactions = [...item.transactions, newTransaction];
-                const newSpentAmount = updatedTransactions.reduce(
-                  (sum, txn) => sum + txn.amount,
-                  0
-                );
-                return {
-                  ...item,
-                  transactions: updatedTransactions,
-                  spentAmount: newSpentAmount,
-                };
-              }
-              return item;
-            }),
-          }
-        : cat
-    );
-
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-    return true;
-  },
-  
-  updateTransaction: async (categoryId, itemId, transactionId, updates) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    let itemFound = false;
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            budgetItems: cat.budgetItems.map((item) => {
-              if (item.id === itemId) {
-                itemFound = true;
-                const updatedTransactions = item.transactions.map((txn) =>
-                  txn.id === transactionId ? { ...txn, ...updates } : txn
-                );
-                const newSpentAmount = updatedTransactions.reduce(
-                  (sum, txn) => sum + txn.amount,
-                  0
-                );
-                return {
-                  ...item,
-                  transactions: updatedTransactions,
-                  spentAmount: newSpentAmount,
-                };
-              }
-              return item;
-            }),
-          }
-        : cat
-    );
-    if (!itemFound) {
-      showNotification('Budget item not found. Please refresh and try again.', 'error');
-      return;
-    }
-
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  deleteTransaction: async (categoryId, itemId, transactionId) => {
-    const state = get();
-    if (!state.currentBudget) return;
-    let itemFound = false;
-    
-    const updatedCategories = state.currentBudget.categories.map((cat) =>
-      cat.id === categoryId
-        ? {
-            ...cat,
-            budgetItems: cat.budgetItems.map((item) => {
-              if (item.id === itemId) {
-                itemFound = true;
-                const updatedTransactions = item.transactions.filter(
-                  (txn) => txn.id !== transactionId
-                );
-                const newSpentAmount = updatedTransactions.reduce(
-                  (sum, txn) => sum + txn.amount,
-                  0
-                );
-                return {
-                  ...item,
-                  transactions: updatedTransactions,
-                  spentAmount: newSpentAmount,
-                };
-              }
-              return item;
-            }),
-          }
-        : cat
-    );
-    if (!itemFound) {
-      showNotification('Budget item not found. Please refresh and try again.', 'error');
-      return;
-    }
-
-    const totals = calculateTotals(updatedCategories);
-    set({
-      currentBudget: {
-        ...state.currentBudget,
-        categories: updatedCategories,
-        totalIncome: totals.totalIncome,
-        totalExpenses: totals.totalExpenses,
-        updatedAt: Date.now(),
-      },
-    });
-    
-    await get().saveBudgetToFirebase();
-  },
-  
-  saveBudgetToFirebase: async () => {
-    const state = get();
-    if (!state.currentBudget) return;
-    
-    try {
-      const budgetRef = doc(db, 'budgets', state.currentBudget.id);
-      const sanitizedBudget = stripUndefined(state.currentBudget);
-      await setDoc(budgetRef, sanitizedBudget as any, { merge: true });
-      console.log('Budget saved to Firebase successfully');
-    } catch (error) {
-      // Firebase save failed -- local state is still correct
-      console.error('Error saving budget to Firebase:', error);
-      showNotification('Failed to save changes to Firebase. Your data is saved locally.', 'error');
-    }
-  },
-}));
-
-
-
+    saveBudgetToFirebase: async () => {
+      const budget = get().currentBudget;
+      if (!budget) return;
+      try {
+        const ref = doc(db, COLLECTIONS.BUDGETS, budget.id);
+        await setDoc(ref, budget, { merge: true });
+      } catch (error) {
+        console.error('Error saving budget:', error);
+        showNotification(
+          'Failed to save changes. Your data is saved locally.',
+          'error',
+        );
+      }
+    },
+  };
+});

@@ -1,17 +1,19 @@
-/** 
- * Notification dispatcher for triggering toasts from non-React contexts like Zustand stores
- */
-let notificationCallback: ((message: string, type: 'error' | 'success') => void) | null = null;
+type NotificationType = 'error' | 'success';
+type NotificationCallback = (message: string, type: NotificationType) => void;
 
-export function setNotificationCallback(callback: (message: string, type: 'error' | 'success') => void) {
+let notificationCallback: NotificationCallback | null = null;
+
+export const setNotificationCallback = (callback: NotificationCallback) => {
   notificationCallback = callback;
-}
+};
 
-export function showNotification(message: string, type: 'error' | 'success' = 'error') {
+export const showNotification = (
+  message: string,
+  type: NotificationType = 'error',
+) => {
   if (notificationCallback) {
     notificationCallback(message, type);
-  } else {
+  } else if (process.env.NODE_ENV !== 'production') {
     console.warn('Notification callback not set:', message, type);
   }
-}
-
+};

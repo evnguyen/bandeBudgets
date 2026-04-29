@@ -2,11 +2,20 @@
 
 import { useMemo, useState } from 'react';
 import type { ChartConfig } from '@/components/ui/chart';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 import { PieChart, Pie } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 import { Category } from '@/lib/types';
-import { THEME_COLORS } from '@/lib/theme-colors';
+import { CHART_PALETTE } from '@/lib/theme-colors';
+import {
+  CHART_MODE_LIST,
+  CHART_MODES,
+  ChartMode,
+} from '@/lib/constants/transactions';
 import {
   getExpenseCategorySummaries,
   ExpenseCategorySummary,
@@ -16,56 +25,49 @@ interface BudgetChartProps {
   categories: Category[];
 }
 
-interface BudgetChartRow extends ExpenseCategorySummary {}
-interface BudgetChartRowWithValue extends BudgetChartRow {
+interface ChartDatum extends ExpenseCategorySummary {
   value: number;
-}
-
-interface BudgetChartRowWithMeta extends BudgetChartRowWithValue {
   chartKey: string;
   fill: string;
 }
 
-const CHART_MODES = ['planned', 'spent'] as const;
-type ChartMode = (typeof CHART_MODES)[number];
+const slug = (name: string, index: number): string =>
+  `${name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'category'}-${index}`;
 
-export function BudgetChart({ categories }: BudgetChartProps) {
-  const [chartMode, setChartMode] = useState<ChartMode>('planned');
+export const BudgetChart = ({ categories }: BudgetChartProps) => {
+  const [chartMode, setChartMode] = useState<ChartMode>(CHART_MODES.PLANNED);
   const rows = getExpenseCategorySummaries(categories);
 
-  // All hooks must be called unconditionally before any early returns
-  const palette = useMemo(
-    () => THEME_COLORS.map((color) => `hsl(${color.primary})`),
-    []
+  const chartData = useMemo<ChartDatum[]>(
+    () =>
+      rows
+        .map((row, index) => {
+          const chartKey = slug(row.name, index);
+          return {
+            ...row,
+            value: row[chartMode],
+            chartKey,
+            fill: `var(--color-${chartKey})`,
+          };
+        })
+        .filter((row) => row.value > 0),
+    [rows, chartMode],
   );
 
-  const chartData: BudgetChartRowWithMeta[] = useMemo(() => {
-    return rows
-      .map((row, index) => {
-        const value = row[chartMode];
-        const chartKey = `${row.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'category'}-${index}`;
-        return {
-          ...row,
-          value,
-          chartKey,
-          fill: `var(--color-${chartKey})`,
+  const chartConfig = useMemo<ChartConfig>(
+    () =>
+      chartData.reduce((config, row, index) => {
+        config[row.chartKey] = {
+          label: row.name,
+          color: CHART_PALETTE[index % CHART_PALETTE.length],
         };
-      })
-      .filter((row) => row.value > 0);
-  }, [rows, chartMode]);
+        return config;
+      }, {} as ChartConfig),
+    [chartData],
+  );
 
-  const chartConfig = useMemo<ChartConfig>(() => {
-    return chartData.reduce((config, row, index) => {
-      config[row.chartKey] = {
-        label: row.name,
-        color: palette[index % palette.length],
-      };
-      return config;
-    }, {} as ChartConfig);
-  }, [chartData, palette]);
-
-  const totalPlanned = rows.reduce((sum, row) => sum + row.planned, 0);
-  const totalSpent = rows.reduce((sum, row) => sum + row.spent, 0);
+  const totalPlanned = rows.reduce((sum, r) => sum + r.planned, 0);
+  const totalSpent = rows.reduce((sum, r) => sum + r.spent, 0);
 
   if (rows.length === 0) {
     return (
@@ -73,16 +75,16 @@ export function BudgetChart({ categories }: BudgetChartProps) {
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
           <BarChart3 className="h-5 w-5 text-muted-foreground" />
         </div>
-        <p className="text-sm font-medium">{'No data to visualize'}</p>
+        <p className="text-sm font-medium">No data to visualize</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          {'Add expense categories to see your budget breakdown.'}
+          Add expense categories to see your budget breakdown.
         </p>
       </div>
     );
   }
 
   const emptyStateMessage =
-    chartMode === 'planned'
+    chartMode === CHART_MODES.PLANNED
       ? 'Add planned amounts to see a breakdown by category.'
       : 'Track spending to see a sectional view of each category.';
 
@@ -90,9 +92,9 @@ export function BudgetChart({ categories }: BudgetChartProps) {
     <div className="rounded-xl border border-border bg-card shadow-sm">
       <div className="border-b border-border px-5 py-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">{'Budget Overview'}</h3>
+          <h3 className="text-sm font-semibold">Budget Overview</h3>
           <div className="flex items-center gap-1 rounded-lg bg-muted p-1">
-            {CHART_MODES.map((mode) => {
+            {CHART_MODE_LIST.map((mode) => {
               const isActive = mode === chartMode;
               return (
                 <button
@@ -116,14 +118,19 @@ export function BudgetChart({ categories }: BudgetChartProps) {
       <div className="p-5">
         <div className="flex h-56 w-full items-center justify-center">
           {chartData.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">{emptyStateMessage}</p>
+            <p className="text-center text-sm text-muted-foreground">
+              {emptyStateMessage}
+            </p>
           ) : (
             <ChartContainer
               config={chartConfig}
               className="mx-auto h-full w-full max-w-[220px]"
             >
               <PieChart>
-                <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel />}
+                />
                 <Pie
                   data={chartData}
                   dataKey="value"
@@ -139,15 +146,17 @@ export function BudgetChart({ categories }: BudgetChartProps) {
 
         <div className="mt-4 space-y-2.5 border-t border-border pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{'Total Planned'}</span>
+            <span className="text-muted-foreground">Total Planned</span>
             <span className="font-semibold">${totalPlanned.toFixed(2)}</span>
           </div>
           <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">{'Total Spent'}</span>
-            <span className="font-semibold text-red-500">${totalSpent.toFixed(2)}</span>
+            <span className="text-muted-foreground">Total Spent</span>
+            <span className="font-semibold text-red-500">
+              ${totalSpent.toFixed(2)}
+            </span>
           </div>
           <div className="flex items-center justify-between border-t border-border pt-2.5 text-sm">
-            <span className="text-muted-foreground">{'Remaining'}</span>
+            <span className="text-muted-foreground">Remaining</span>
             <span className="font-semibold text-emerald-500">
               ${(totalPlanned - totalSpent).toFixed(2)}
             </span>
@@ -156,4 +165,4 @@ export function BudgetChart({ categories }: BudgetChartProps) {
       </div>
     </div>
   );
-}
+};

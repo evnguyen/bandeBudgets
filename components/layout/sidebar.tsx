@@ -1,43 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Settings, HelpCircle, Wallet, Moon, Sun, LogOut } from 'lucide-react';
+import { Settings, Wallet, Moon, Sun, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/lib/stores/auth-store';
+import { useDarkMode } from '@/hooks/use-dark-mode';
 
 const navItems = [
   { label: 'Budget', href: '/', icon: Wallet },
   { label: 'Settings', href: '/settings', icon: Settings },
-  { label: 'Help', href: '#', icon: HelpCircle },
-];
+] as const;
 
-export function Sidebar() {
+export const Sidebar = () => {
   const pathname = usePathname();
-  const { logout } = useAuthStore();
-  const [isDark, setIsDark] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    const isDarkMode =
-      localStorage.getItem('theme') === 'dark' ||
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setIsDark(isDarkMode);
-  }, []);
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  };
+  const logout = useAuthStore((s) => s.logout);
+  const { isDark, toggle, mounted } = useDarkMode();
 
   const handleLogout = async () => {
     try {
@@ -49,7 +27,6 @@ export function Sidebar() {
 
   return (
     <aside className="hidden w-64 flex-col border-r border-border bg-card lg:flex">
-      {/* Brand */}
       <div className="flex h-16 shrink-0 items-center gap-3 border-b border-border px-5">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <Wallet className="h-4 w-4" />
@@ -57,7 +34,6 @@ export function Sidebar() {
         <span className="text-base font-bold tracking-tight">Budget App</span>
       </div>
 
-      {/* Nav links */}
       <nav className="flex-1 overflow-y-auto p-3 pt-4">
         <ul className="space-y-0.5">
           {navItems.map(({ label, href, icon: Icon }) => {
@@ -66,11 +42,12 @@ export function Sidebar() {
               <li key={href}>
                 <Link
                   href={href}
+                  aria-current={isActive ? 'page' : undefined}
                   className={cn(
                     'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -82,12 +59,13 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      {/* Bottom actions */}
-      <div className="shrink-0 border-t border-border p-3 space-y-0.5">
+      <div className="shrink-0 space-y-0.5 border-t border-border p-3">
         {mounted && (
           <button
-            onClick={toggleTheme}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            type="button"
+            onClick={toggle}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {isDark ? (
               <Sun className="h-4 w-4 shrink-0" />
@@ -98,13 +76,15 @@ export function Sidebar() {
           </button>
         )}
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Log out"
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <LogOut className="h-4 w-4 shrink-0" />
-          {'Logout'}
+          Logout
         </button>
       </div>
     </aside>
   );
-}
+};

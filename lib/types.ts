@@ -1,13 +1,8 @@
-// Core types for the budgeting app
-export type TransactionType = 'income' | 'expense';
-export type ExpenseGroup =
-  | 'Housing'
-  | 'Transportation'
-  | 'Food'
-  | 'Insurance'
-  | 'Giving'
-  | 'Savings'
-  | 'Personal';
+import type { TransactionType } from '@/lib/constants/transactions';
+import type { ExpenseGroup } from '@/lib/constants/budget-groups';
+import type { ThemeColor } from '@/lib/theme-colors';
+
+export type { TransactionType, ExpenseGroup, ThemeColor };
 
 export interface Transaction {
   id: string;
@@ -33,7 +28,7 @@ export interface Category {
   id: string;
   name: string;
   type: TransactionType;
-  expenseGroup?: ExpenseGroup;
+  expenseGroup: ExpenseGroup | null;
   budgetItems: BudgetItem[];
   order: number;
 }
@@ -41,7 +36,7 @@ export interface Category {
 export interface Budget {
   id: string;
   userId: string;
-  month: string; // Format: YYYY-MM
+  month: string;
   categories: Category[];
   totalIncome: number;
   totalExpenses: number;
@@ -51,14 +46,10 @@ export interface Budget {
 
 export interface UserSettings {
   userId: string;
-  primaryColor: string;
-  secondaryColor: string;
-  currency: string;
+  primaryColor: ThemeColor;
+  secondaryColor: ThemeColor;
   updatedAt: number;
 }
-
-// Theme color options
-export type ThemeColor = 'blue' | 'green' | 'purple' | 'orange' | 'red' | 'teal';
 
 export interface ThemeColorOption {
   name: string;

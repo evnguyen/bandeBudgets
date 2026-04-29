@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useBudgetStore } from '@/lib/stores/budget-store';
-import { TransactionType } from '@/lib/types';
+import { TransactionType } from '@/lib/constants/transactions';
+import { getTodayLocalDate } from '@/lib/dates';
 import {
   Dialog,
   DialogContent,
@@ -22,23 +23,16 @@ interface AddTransactionDialogProps {
   transactionType: TransactionType;
 }
 
-const getTodayLocalDate = () => {
-  const now = new Date();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${now.getFullYear()}-${month}-${day}`;
-};
-
-export function AddTransactionDialog({
+export const AddTransactionDialog = ({
   categoryId,
   budgetItemId,
   transactionType,
-}: AddTransactionDialogProps) {
-  const { addTransaction } = useBudgetStore();
+}: AddTransactionDialogProps) => {
+  const addTransaction = useBudgetStore((s) => s.addTransaction);
   const [open, setOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [date, setDate] = useState(getTodayLocalDate());
+  const [date, setDate] = useState(() => getTodayLocalDate());
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,19 +60,19 @@ export function AddTransactionDialog({
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Plus className="mr-2 h-4 w-4" />
-          {'Add Transaction'}
+          Add Transaction
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{'Add Transaction'}</DialogTitle>
+          <DialogTitle>Add Transaction</DialogTitle>
           <DialogDescription>
-            {'Record a new transaction for this budget item'}
+            Record a new transaction for this budget item
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="transaction-description">{'Description'}</Label>
+            <Label htmlFor="transaction-description">Description</Label>
             <Input
               id="transaction-description"
               placeholder="e.g., Weekly grocery shopping"
@@ -88,7 +82,7 @@ export function AddTransactionDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="transaction-amount">{'Amount'}</Label>
+            <Label htmlFor="transaction-amount">Amount</Label>
             <Input
               id="transaction-amount"
               type="number"
@@ -100,7 +94,7 @@ export function AddTransactionDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="transaction-date">{'Date'}</Label>
+            <Label htmlFor="transaction-date">Date</Label>
             <Input
               id="transaction-date"
               type="date"
@@ -110,10 +104,10 @@ export function AddTransactionDialog({
             />
           </div>
           <Button type="submit" className="w-full">
-            {'Add Transaction'}
+            Add Transaction
           </Button>
         </form>
       </DialogContent>
     </Dialog>
   );
-}
+};

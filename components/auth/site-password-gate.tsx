@@ -2,23 +2,27 @@ import type { ReactNode } from 'react';
 import { cookies } from 'next/headers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Lock } from 'lucide-react';
 import { ReturnUrlInput } from './return-url-input';
+import { COOKIE_KEYS } from '@/lib/constants/keys';
 
-const ACCESS_COOKIE = 'siteAccessGranted';
-const ERROR_COOKIE = 'siteAccessError';
-
-export async function SitePasswordGate({ children }: { children: ReactNode }) {
+export const SitePasswordGate = async ({ children }: { children: ReactNode }) => {
   const cookieStore = await cookies();
-  const accessCookie = cookieStore.get(ACCESS_COOKIE);
+  const accessCookie = cookieStore.get(COOKIE_KEYS.ACCESS_GRANTED);
 
   if (accessCookie?.value === '1') {
     return <>{children}</>;
   }
 
-  const errorCookie = cookieStore.get(ERROR_COOKIE);
+  const errorCookie = cookieStore.get(COOKIE_KEYS.ACCESS_ERROR);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-muted p-4">
@@ -27,14 +31,14 @@ export async function SitePasswordGate({ children }: { children: ReactNode }) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Lock className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">{'Site Access Required'}</CardTitle>
-          <CardDescription>{'Enter the site password to continue'}</CardDescription>
+          <CardTitle className="text-2xl font-bold">Site Access Required</CardTitle>
+          <CardDescription>Enter the site password to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <form method="post" action="/api/site-password" className="space-y-4">
             <ReturnUrlInput />
             <div className="space-y-2">
-              <Label htmlFor="site-password">{'Password'}</Label>
+              <Label htmlFor="site-password">Password</Label>
               <Input
                 id="site-password"
                 name="password"
@@ -44,15 +48,17 @@ export async function SitePasswordGate({ children }: { children: ReactNode }) {
                 autoFocus
               />
               {errorCookie && (
-                <p className="text-sm text-destructive">{'Incorrect password. Please try again.'}</p>
+                <p className="text-sm text-destructive">
+                  Incorrect password. Please try again.
+                </p>
               )}
             </div>
             <Button type="submit" className="w-full">
-              {'Continue'}
+              Continue
             </Button>
           </form>
         </CardContent>
       </Card>
     </div>
   );
-}
+};

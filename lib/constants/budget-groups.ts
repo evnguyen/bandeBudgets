@@ -1,6 +1,4 @@
-import { ExpenseGroup } from '@/lib/types';
-
-export const EXPENSE_GROUPS: ExpenseGroup[] = [
+export const EXPENSE_GROUPS = [
   'Housing',
   'Transportation',
   'Food',
@@ -8,6 +6,8 @@ export const EXPENSE_GROUPS: ExpenseGroup[] = [
   'Giving',
   'Savings',
   'Personal',
-];
+] as const;
+
+export type ExpenseGroup = (typeof EXPENSE_GROUPS)[number];
 
 export const DEFAULT_EXPENSE_GROUP: ExpenseGroup = 'Personal';
