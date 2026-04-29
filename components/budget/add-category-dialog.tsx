@@ -54,7 +54,7 @@ export function AddCategoryDialog({
     const finalType = allowTypeSelection ? selectedType : (type || 'expense');
     const finalExpenseGroup =
       finalType === 'expense'
-        ? (allowTypeSelection ? selectedExpenseGroup : expenseGroup) || DEFAULT_EXPENSE_GROUP
+        ? selectedExpenseGroup || DEFAULT_EXPENSE_GROUP
         : undefined;
 
     await addCategory({ name, type: finalType, expenseGroup: finalExpenseGroup, order });
@@ -70,10 +70,10 @@ export function AddCategoryDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="w-full">
-          <Plus className="mr-2 h-4 w-4" />
+        <button className="flex w-full items-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:border-primary hover:text-primary">
+          <Plus className="h-4 w-4" />
           {buttonLabel}
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

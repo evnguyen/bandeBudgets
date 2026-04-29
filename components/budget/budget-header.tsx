@@ -2,10 +2,9 @@
 
 import { useBudgetStore } from '@/lib/stores/budget-store';
 import { useAuthStore } from '@/lib/stores/auth-store';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, Target } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useState } from 'react';
 
 export function BudgetHeader() {
@@ -13,91 +12,122 @@ export function BudgetHeader() {
   const { user } = useAuthStore();
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const formatMonth = (date: Date) => {
-    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
+  const formatMonth = (date: Date) =>
+    date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
-  const getMonthString = (date: Date) => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-  };
+  const getMonthString = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
   const handlePreviousMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setCurrentDate(newDate);
-    if (user) {
-      loadBudget(user.uid, getMonthString(newDate));
-    }
+    const d = new Date(currentDate);
+    d.setMonth(d.getMonth() - 1);
+    setCurrentDate(d);
+    if (user) loadBudget(user.uid, getMonthString(d));
   };
 
   const handleNextMonth = () => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setCurrentDate(newDate);
-    if (user) {
-      loadBudget(user.uid, getMonthString(newDate));
-    }
+    const d = new Date(currentDate);
+    d.setMonth(d.getMonth() + 1);
+    setCurrentDate(d);
+    if (user) loadBudget(user.uid, getMonthString(d));
   };
 
   const handleCurrentMonth = () => {
     const now = new Date();
     setCurrentDate(now);
-    if (user) {
-      loadBudget(user.uid, getMonthString(now));
-    }
+    if (user) loadBudget(user.uid, getMonthString(now));
   };
 
-  const remaining = (currentBudget?.totalIncome || 0) - (currentBudget?.totalExpenses || 0);
+  const totalIncome = currentBudget?.totalIncome || 0;
+  const totalExpenses = currentBudget?.totalExpenses || 0;
+  const remaining = totalIncome - totalExpenses;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{'Budget'}</h1>
-        <Link href="/settings">
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
-          </Button>
-        </Link>
-      </div>
-
-      <div className="flex items-center justify-center gap-2">
-        <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" onClick={handleCurrentMonth} className="min-w-[200px]">
-          {formatMonth(currentDate)}
-        </Button>
-        <Button variant="outline" size="icon" onClick={handleNextMonth}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground">{'Total Income'}</p>
-          <p className="mt-2 text-3xl font-bold text-green-600">
-            {'$'}
-            {(currentBudget?.totalIncome || 0).toFixed(2)}
-          </p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground">{'Total Expenses'}</p>
-          <p className="mt-2 text-3xl font-bold text-red-600">
-            {'$'}
-            {(currentBudget?.totalExpenses || 0).toFixed(2)}
-          </p>
-        </Card>
-        <Card className="p-6">
-          <p className="text-sm font-medium text-muted-foreground">{'Left to Budget'}</p>
-          <p
-            className={`mt-2 text-3xl font-bold ${
-              remaining >= 0 ? 'text-green-600' : 'text-red-600'
-            }`}
+    <div className="space-y-5">
+      {/* Title row + month nav */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">{'Budget'}</h1>
+          <p className="text-sm text-muted-foreground">{'Zero-based monthly budget'}</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handlePreviousMonth}
+            className="h-9 w-9 shrink-0"
           >
-            {'$'}
-            {remaining.toFixed(2)}
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={handleCurrentMonth}
+            className="h-9 min-w-[148px] text-sm font-medium"
+          >
+            {formatMonth(currentDate)}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleNextMonth}
+            className="h-9 w-9 shrink-0"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary cards — 2-col on mobile (income|expenses), left-to-budget full-width below */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
+        {/* Total Income */}
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+          <div className="flex items-start justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {'Total Income'}
+            </span>
+            <div className="rounded-md bg-emerald-500/10 p-1.5">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-bold tracking-tight text-emerald-500 sm:mt-4 sm:text-3xl">
+            {'$'}{totalIncome.toFixed(2)}
           </p>
-        </Card>
+        </div>
+
+        {/* Total Expenses */}
+        <div className="rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+          <div className="flex items-start justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {'Total Expenses'}
+            </span>
+            <div className="rounded-md bg-red-500/10 p-1.5">
+              <TrendingDown className="h-4 w-4 text-red-500" />
+            </div>
+          </div>
+          <p className="mt-3 text-2xl font-bold tracking-tight text-red-500 sm:mt-4 sm:text-3xl">
+            {'$'}{totalExpenses.toFixed(2)}
+          </p>
+        </div>
+
+        {/* Left to Budget — spans full width on mobile, single col on sm+ */}
+        <div className="col-span-2 rounded-xl border border-border bg-card p-4 shadow-sm sm:col-span-1 sm:p-5">
+          <div className="flex items-start justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {'Left to Budget'}
+            </span>
+            <div className={cn('rounded-md p-1.5', remaining >= 0 ? 'bg-primary/10' : 'bg-red-500/10')}>
+              <Target className={cn('h-4 w-4', remaining >= 0 ? 'text-primary' : 'text-red-500')} />
+            </div>
+          </div>
+          <p
+            className={cn(
+              'mt-3 text-2xl font-bold tracking-tight sm:mt-4 sm:text-3xl',
+              remaining >= 0 ? 'text-primary' : 'text-red-500'
+            )}
+          >
+            {'$'}{remaining.toFixed(2)}
+          </p>
+        </div>
       </div>
     </div>
   );
