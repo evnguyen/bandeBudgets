@@ -1,47 +1,47 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { useAuthStore } from '@/lib/stores/auth-store';
-import { useSettingsStore } from '@/lib/stores/settings-store';
-import { useBudgetStore } from '@/lib/stores/budget-store';
-import { useToast } from '@/hooks/use-toast';
-import { setNotificationCallback } from '@/lib/notifications';
-import { getMonthString } from '@/lib/dates';
+import { onAuthStateChanged } from 'firebase/auth'
+import { useEffect } from 'react'
+import { useToast } from '@/hooks/use-toast'
+import { auth } from '@/lib/firebase'
+import { setNotificationCallback } from '@/lib/notifications'
+import { useAuthStore } from '@/lib/stores/auth-store'
+import { useBudgetStore } from '@/lib/stores/budget-store'
+import { useSettingsStore } from '@/lib/stores/settings-store'
+import { getMonthString } from '@/lib/utils/dates'
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const setUser = useAuthStore((s) => s.setUser);
-  const setLoading = useAuthStore((s) => s.setLoading);
-  const loadSettings = useSettingsStore((s) => s.loadSettings);
-  const loadBudget = useBudgetStore((s) => s.loadBudget);
-  const { toast } = useToast();
+	const setUser = useAuthStore(state => state.setUser)
+	const setLoading = useAuthStore(state => state.setLoading)
+	const loadSettings = useSettingsStore(state => state.loadSettings)
+	const loadBudget = useBudgetStore(state => state.loadBudget)
+	const { toast } = useToast()
 
-  useEffect(() => {
-    setNotificationCallback((message, type) => {
-      toast({
-        description: message,
-        variant: type === 'error' ? 'destructive' : 'default',
-      });
-    });
-  }, [toast]);
+	useEffect(() => {
+		setNotificationCallback((message, type) => {
+			toast({
+				description: message,
+				variant: type === 'error' ? 'destructive' : 'default'
+			})
+		})
+	}, [toast])
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      try {
-        await loadSettings(user.uid);
-        await loadBudget(user.uid, getMonthString(new Date()));
-      } finally {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, [setUser, setLoading, loadSettings, loadBudget]);
+	useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, async user => {
+			setUser(user)
+			if (!user) {
+				setLoading(false)
+				return
+			}
+			try {
+				await loadSettings(user.uid)
+				await loadBudget(user.uid, getMonthString(new Date()))
+			} finally {
+				setLoading(false)
+			}
+		})
+		return () => unsubscribe()
+	}, [setUser, setLoading, loadSettings, loadBudget])
 
-  return <>{children}</>;
-};
+	return <>{children}</>
+}
