@@ -20,10 +20,35 @@ export const ThemePreview = ({ settings }: ThemePreviewProps) => {
 				<ColorRow label="Secondary" name={secondary.name} hsl={secondary.secondary} />
 				<div>
 					<p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Combined Preview</p>
-					<div className="rounded-lg p-4 shadow-sm" style={{ backgroundColor: `hsl(${primary.primary})` }}>
-						<p className="mb-2 font-semibold text-white">Main Section</p>
-						<div className="rounded p-3 text-white" style={{ backgroundColor: `hsl(${secondary.secondary})` }}>
-							Accent Area
+					<div className="rounded-lg border border-border bg-background p-4">
+						<div className="mb-3 flex items-center gap-2">
+							<div className="h-3 w-3 rounded-full" style={{ backgroundColor: `hsl(${primary.primary})` }} />
+							<span className="text-xs font-semibold text-foreground">Budget Overview</span>
+						</div>
+						<div className="grid grid-cols-2 gap-2">
+							<div className="rounded-md bg-card p-3 shadow-sm">
+								<p className="mb-1 text-xs text-muted-foreground">Income</p>
+								<p className="text-sm font-bold" style={{ color: `hsl(${primary.primary})` }}>
+									$3,200
+								</p>
+							</div>
+							<div className="rounded-md bg-card p-3 shadow-sm">
+								<p className="mb-1 text-xs text-muted-foreground">Expenses</p>
+								<p className="text-sm font-bold" style={{ color: `hsl(${secondary.secondary})` }}>
+									$2,100
+								</p>
+							</div>
+						</div>
+						<div className="mt-2 rounded-md bg-card p-3 shadow-sm">
+							<div className="mb-2 flex items-center justify-between">
+								<p className="text-xs text-muted-foreground">Left to Budget</p>
+								<p className="text-xs font-bold" style={{ color: `hsl(${primary.primary})` }}>
+									$1,100
+								</p>
+							</div>
+							<div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+								<div className="h-full w-2/3 rounded-full" style={{ backgroundColor: `hsl(${primary.primary})` }} />
+							</div>
 						</div>
 					</div>
 				</div>

@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Moon, Settings, Sun, Wallet } from 'lucide-react'
-import { useDarkMode } from '@/hooks/use-dark-mode'
+import { LogOut, Settings, Wallet } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { cn } from '@/lib/utils'
 
@@ -15,7 +14,6 @@ const navItems = [
 export const Sidebar = () => {
 	const pathname = usePathname()
 	const logout = useAuthStore(state => state.logout)
-	const { isDark, toggle, mounted } = useDarkMode()
 
 	const handleLogout = async () => {
 		try {
@@ -60,17 +58,6 @@ export const Sidebar = () => {
 			</nav>
 
 			<div className="shrink-0 space-y-0.5 border-t border-border p-3">
-				{mounted && (
-					<button
-						type="button"
-						onClick={toggle}
-						aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-						className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-					>
-						{isDark ? <Sun className="h-4 w-4 shrink-0" /> : <Moon className="h-4 w-4 shrink-0" />}
-						{isDark ? 'Light mode' : 'Dark mode'}
-					</button>
-				)}
 				<button
 					type="button"
 					onClick={handleLogout}

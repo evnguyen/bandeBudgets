@@ -24,7 +24,6 @@ export const BudgetItemCard = ({ categoryId, item, type }: BudgetItemCardProps) 
 	const isIncome = type === TRANSACTION_TYPES.INCOME
 	const transactions = item.transactions
 
-	const percentage = item.plannedAmount > 0 ? Math.min((item.spentAmount / item.plannedAmount) * 100, 100) : 0
 	const remaining = item.plannedAmount - item.spentAmount
 	const isOverBudget = !isIncome && item.spentAmount > item.plannedAmount
 
@@ -71,28 +70,13 @@ export const BudgetItemCard = ({ categoryId, item, type }: BudgetItemCardProps) 
 					</AlertDialog>
 				</div>
 
-				<div className="space-y-1.5">
-					<div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-						<div
-							className={cn(
-								'h-full rounded-full transition-all duration-500',
-								isOverBudget ? 'bg-red-500' : 'bg-primary'
-							)}
-							style={{ width: `${percentage}%` }}
-						/>
-					</div>
-					<div className="flex justify-between text-xs text-muted-foreground">
-						{isIncome ? (
-							<span>Received: ${item.spentAmount.toFixed(2)}</span>
-						) : (
-							<span className={isOverBudget ? 'text-red-500' : ''}>
-								{isOverBudget ? 'Over by $' : 'Left: $'}
-								{Math.abs(remaining).toFixed(2)}
-							</span>
-						)}
-						<span>{percentage.toFixed(0)}%</span>
-					</div>
-				</div>
+				<p className={cn('text-xs', isOverBudget ? 'text-red-500' : 'text-muted-foreground')}>
+					{isIncome
+						? `Received: $${item.spentAmount.toFixed(2)}`
+						: isOverBudget
+							? `Over by $${Math.abs(remaining).toFixed(2)}`
+							: `Left: $${remaining.toFixed(2)}`}
+				</p>
 
 				<AddTransactionDialog categoryId={categoryId} budgetItemId={item.id} transactionType={type} />
 

@@ -4,7 +4,8 @@ export const THEME_COLORS = [
 	{ name: 'Purple', value: 'purple', primary: '262 83% 58%', secondary: '262 83% 68%' },
 	{ name: 'Orange', value: 'orange', primary: '25 95% 53%', secondary: '25 95% 63%' },
 	{ name: 'Red', value: 'red', primary: '0 72% 51%', secondary: '0 72% 61%' },
-	{ name: 'Teal', value: 'teal', primary: '173 80% 40%', secondary: '173 80% 50%' }
+	{ name: 'Teal', value: 'teal', primary: '173 80% 40%', secondary: '173 80% 50%' },
+	{ name: 'Pink', value: 'pink', primary: '330 81% 60%', secondary: '330 81% 70%' }
 ] as const
 
 export type ThemeColor = (typeof THEME_COLORS)[number]['value']

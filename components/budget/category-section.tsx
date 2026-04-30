@@ -27,7 +27,6 @@ export const CategorySection = ({ category }: CategorySectionProps) => {
 
 	const totalPlanned = category.budgetItems.reduce((sum, item) => sum + item.plannedAmount, 0)
 	const totalSpent = category.budgetItems.reduce((sum, item) => sum + item.spentAmount, 0)
-	const spendPercent = totalPlanned > 0 ? Math.min((totalSpent / totalPlanned) * 100, 100) : 0
 	const isOverBudget = category.type === TRANSACTION_TYPES.EXPENSE && totalSpent > totalPlanned && totalPlanned > 0
 
 	return (
@@ -83,18 +82,6 @@ export const CategorySection = ({ category }: CategorySectionProps) => {
 						</Button>
 					</div>
 				</div>
-
-				{totalPlanned > 0 && (
-					<div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-muted">
-						<div
-							className={cn(
-								'h-full rounded-full transition-all duration-500',
-								isOverBudget ? 'bg-red-500' : 'bg-primary'
-							)}
-							style={{ width: `${spendPercent}%` }}
-						/>
-					</div>
-				)}
 			</div>
 
 			{isExpanded && (

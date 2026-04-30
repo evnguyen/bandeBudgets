@@ -3,10 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Menu, Moon, Settings, Sun, Wallet } from 'lucide-react'
+import { LogOut, Menu, Settings, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
-import { useDarkMode } from '@/hooks/use-dark-mode'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { cn } from '@/lib/utils'
 
@@ -18,7 +17,6 @@ const navItems = [
 export const AppNav = () => {
 	const pathname = usePathname()
 	const logout = useAuthStore(state => state.logout)
-	const { isDark, toggle, mounted } = useDarkMode()
 	const [open, setOpen] = useState(false)
 
 	const handleLogout = async () => {
@@ -66,17 +64,6 @@ export const AppNav = () => {
 								})}
 							</nav>
 							<div className="mt-6 space-y-1 border-t pt-4">
-								{mounted && (
-									<button
-										type="button"
-										onClick={toggle}
-										aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-										className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-									>
-										{isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-										{isDark ? 'Light mode' : 'Dark mode'}
-									</button>
-								)}
 								<button
 									type="button"
 									onClick={handleLogout}
@@ -95,16 +82,6 @@ export const AppNav = () => {
 					</Link>
 				</div>
 				<div className="flex items-center gap-1">
-					{mounted && (
-						<Button
-							variant="ghost"
-							size="icon"
-							onClick={toggle}
-							aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-						>
-							{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-						</Button>
-					)}
 					<Button variant="ghost" size="icon" onClick={handleLogout} aria-label="Log out">
 						<LogOut className="h-4 w-4" />
 					</Button>
