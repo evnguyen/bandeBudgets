@@ -4,7 +4,8 @@ export const COOKIE_KEYS = {
 } as const
 
 export const STORAGE_KEYS = {
-	THEME: 'theme'
+	THEME: 'theme',
+	AI_INSIGHTS_COOLDOWN: 'ai_insights_last_generated'
 } as const
 
 export const COOKIE_MAX_AGE = {

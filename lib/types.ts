@@ -80,6 +80,24 @@ export interface NewTransaction {
 	type: TransactionType
 }
 
+export interface BudgetMonthSummary {
+	month: string
+	totalIncome: number
+	totalExpenses: number
+	categories: {
+		name: string
+		type: TransactionType
+		planned: number
+		spent: number
+	}[]
+}
+
+export interface AiInsightsRequest {
+	userId: string
+	budgetHistory: BudgetMonthSummary[]
+	userContext: string
+}
+
 export type NotificationType = 'error' | 'success'
 
 export type NotificationCallback = (message: string, type: NotificationType) => void
