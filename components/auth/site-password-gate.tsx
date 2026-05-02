@@ -9,6 +9,10 @@ import { Label } from '@/components/ui/label'
 import { COOKIE_KEYS } from '@/lib/constants/keys'
 
 export const SitePasswordGate = async ({ children }: { children: ReactNode }) => {
+	if (process.env.SITE_PASSWORD_ENABLED === 'false') {
+		return <>{children}</>
+	}
+
 	const cookieStore = await cookies()
 	const accessCookie = cookieStore.get(COOKIE_KEYS.ACCESS_GRANTED)
 
