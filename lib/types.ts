@@ -93,7 +93,6 @@ export interface BudgetMonthSummary {
 }
 
 export interface AiInsightsRequest {
-	userId: string
 	budgetHistory: BudgetMonthSummary[]
 	userContext: string
 }

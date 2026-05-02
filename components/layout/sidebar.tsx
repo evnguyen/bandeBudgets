@@ -2,14 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Settings, Wallet } from 'lucide-react'
+import { LogOut, Wallet } from 'lucide-react'
+import { NAV_ITEMS } from '@/lib/constants/nav'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { cn } from '@/lib/utils'
-
-const navItems = [
-	{ label: 'Budget', href: '/', icon: Wallet },
-	{ label: 'Settings', href: '/settings', icon: Settings }
-] as const
 
 export const Sidebar = () => {
 	const pathname = usePathname()
@@ -34,7 +30,7 @@ export const Sidebar = () => {
 
 			<nav className="flex-1 overflow-y-auto p-3 pt-4">
 				<ul className="space-y-0.5">
-					{navItems.map(({ label, href, icon: Icon }) => {
+					{NAV_ITEMS.map(({ label, href, icon: Icon }) => {
 						const isActive = pathname === href
 						return (
 							<li key={href}>

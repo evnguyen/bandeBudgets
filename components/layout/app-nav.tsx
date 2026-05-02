@@ -3,16 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LogOut, Menu, Settings, Wallet } from 'lucide-react'
+import { LogOut, Menu, Wallet } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { NAV_ITEMS } from '@/lib/constants/nav'
 import { useAuthStore } from '@/lib/stores/auth-store'
 import { cn } from '@/lib/utils'
-
-const navItems = [
-	{ label: 'Budget', href: '/', icon: Wallet },
-	{ label: 'Settings', href: '/settings', icon: Settings }
-] as const
 
 export const AppNav = () => {
 	const pathname = usePathname()
@@ -42,7 +38,7 @@ export const AppNav = () => {
 								<h2 className="text-xl font-bold text-primary">Budget App</h2>
 							</div>
 							<nav className="space-y-1">
-								{navItems.map(({ label, href, icon: Icon }) => {
+								{NAV_ITEMS.map(({ label, href, icon: Icon }) => {
 									const isActive = pathname === href
 									return (
 										<Link

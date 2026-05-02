@@ -6,7 +6,8 @@ import {
 	FatalError,
 	isRateLimited,
 	ModelUnavailableError,
-	SYSTEM_PROMPT
+	SYSTEM_PROMPT,
+	verifyFirebaseToken
 } from '@/app/api/ai-insights/utils'
 import { FREE_MODELS } from '@/lib/constants/ai-models'
 import { COOKIE_KEYS } from '@/lib/constants/keys'
@@ -22,6 +23,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 		return NextResponse.json({ error: 'AI service is not configured.' }, { status: 500 })
 	}
 
+	const authHeader = request.headers.get('Authorization')
+	const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null
+
+	if (!token) {
+		return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+	}
+
+	let userId: string
+	try {
+		userId = await verifyFirebaseToken(token)
+	} catch {
+		return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+	}
+
 	let body: AiInsightsRequest
 	try {
 		body = (await request.json()) as AiInsightsRequest
@@ -29,10 +44,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 		return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
 	}
 
-	const { userId, budgetHistory, userContext } = body
+	const { budgetHistory, userContext } = body
 
-	if (!userId || !Array.isArray(budgetHistory) || budgetHistory.length === 0) {
+	if (!Array.isArray(budgetHistory) || budgetHistory.length === 0) {
 		return NextResponse.json({ error: 'No budget history provided.' }, { status: 400 })
+	}
+
+	if (budgetHistory.length > 12) {
+		return NextResponse.json({ error: 'Too many months provided.' }, { status: 400 })
+	}
+
+	if (userContext && userContext.length > 500) {
+		return NextResponse.json({ error: 'Context too long. Keep it under 500 characters.' }, { status: 400 })
 	}
 
 	if (isRateLimited(userId)) {

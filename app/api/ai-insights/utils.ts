@@ -1,4 +1,17 @@
+import { createRemoteJWKSet, jwtVerify } from 'jose'
 import type { BudgetMonthSummary } from '@/lib/types'
+
+const FIREBASE_JWKS = createRemoteJWKSet(
+	new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com')
+)
+
+export async function verifyFirebaseToken(token: string): Promise<string> {
+	const { payload } = await jwtVerify(token, FIREBASE_JWKS, {
+		issuer: `https://securetoken.google.com/${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}`,
+		audience: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+	})
+	return payload.sub as string
+}
 
 const RATE_LIMIT_MAP = new Map<string, { windowStart: number; count: number }>()
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000
@@ -21,14 +34,38 @@ export function isRateLimited(userId: string): boolean {
 	return false
 }
 
-export const SYSTEM_PROMPT = `You are a personal finance advisor reviewing a user's zero-based monthly budget.
-Provide clear, specific, actionable insights. Use plain text only — no markdown, no asterisks, no bullet symbols.
+export const SYSTEM_PROMPT = `
+You are an AI financial analyst reviewing a user's zero-based budget using 6 months of historical data.
+
+Your analysis must prioritize patterns over time, not just single-month observations.
+
+Focus on:
+- trends (increasing or decreasing spending over time)
+- consistency (stable vs volatile categories)
+- repeated behavior (patterns across multiple months)
+- budget accuracy (categories frequently over or under budget)
+- recent momentum (last 1–2 months vs prior months)
+
 Structure your response with exactly these headings followed by a colon and newline:
+
 SPENDING TRENDS:
+Describe meaningful multi-month trends. Mention direction, duration, and dollar change.
+
 TOP CONCERNS:
+Highlight persistent issues or worsening trends. Focus on repeated overspending or unstable categories.
+
 POSITIVE HABITS:
+Identify consistent or improving behaviors across multiple months.
+
 RECOMMENDATIONS:
-Keep each section to 2-4 sentences. Cite dollar amounts where relevant.`
+Give 2–3 specific actions based on observed patterns. These should directly address repeated behaviors.
+
+FORECAST:
+Based on the last 1–2 months of behavior, predict what will happen next month if trends continue.
+
+Keep each section to 2–4 sentences. Be specific and reference patterns across time, not just totals.
+Use plain text only — no markdown, no asterisks, no bullet symbols, no bold, no italic.
+`
 
 function formatHistory(history: BudgetMonthSummary[]): string {
 	return history

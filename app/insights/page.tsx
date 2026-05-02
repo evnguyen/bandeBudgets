@@ -2,18 +2,9 @@
 
 import { doc, getDoc } from 'firebase/firestore'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger
-} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
 import { AI_INSIGHTS_COOLDOWN_MS, AI_INSIGHTS_ERRORS } from '@/lib/constants/ai-models'
@@ -26,6 +17,26 @@ import { getBudgetId } from '@/lib/utils/budget-transform'
 import { getMonthString } from '@/lib/utils/dates'
 
 type InsightState = 'idle' | 'loading-history' | 'loading-ai' | 'success'
+
+const SECTIONS = [
+	{ key: 'SPENDING TRENDS', label: 'Spending Trends' },
+	{ key: 'TOP CONCERNS', label: 'Top Concerns' },
+	{ key: 'POSITIVE HABITS', label: 'Positive Habits' },
+	{ key: 'RECOMMENDATIONS', label: 'Recommendations' },
+	{ key: 'FORECAST', label: 'Forecast' }
+]
+
+function parseSections(text: string): Record<string, string> {
+	const result: Record<string, string> = {}
+	for (const { key } of SECTIONS) {
+		const pattern = new RegExp(`${key}:\\s*([\\s\\S]*?)(?=${SECTIONS.map(s => s.key).join(':|')}:|$)`)
+		const match = text.match(pattern)
+		if (match?.[1]) {
+			result[key] = match[1].trim()
+		}
+	}
+	return result
+}
 
 function getCooldownRemaining(): number {
 	try {
@@ -76,11 +87,57 @@ async function loadBudgetHistory(userId: string): Promise<BudgetMonthSummary[]> 
 	return snapshots.filter(snapshot => snapshot.exists()).map(snapshot => buildMonthSummary(snapshot.data() as Budget))
 }
 
-export const AiInsightsDialog = () => {
+function GhostCards() {
+	return (
+		<div className="space-y-3">
+			{SECTIONS.map(({ key, label }) => (
+				<div key={key} className="rounded-xl border border-dashed border-border bg-card/50 px-5 py-4">
+					<p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground/40">{label}</p>
+					<div className="space-y-2">
+						<div className="h-2 w-full rounded-full bg-muted" />
+						<div className="h-2 w-4/5 rounded-full bg-muted" />
+						<div className="h-2 w-3/5 rounded-full bg-muted" />
+					</div>
+				</div>
+			))}
+		</div>
+	)
+}
+
+function SkeletonCards() {
+	return (
+		<div className="space-y-3">
+			{SECTIONS.map(({ key }) => (
+				<div key={key} className="animate-pulse rounded-xl border border-border bg-card px-5 py-4">
+					<div className="mb-3 h-3 w-32 rounded-full bg-muted" />
+					<div className="space-y-2">
+						<div className="h-2 w-full rounded-full bg-muted" />
+						<div className="h-2 w-4/5 rounded-full bg-muted" />
+						<div className="h-2 w-3/5 rounded-full bg-muted" />
+					</div>
+				</div>
+			))}
+		</div>
+	)
+}
+
+function InsightCards({ sections }: { sections: Record<string, string> }) {
+	return (
+		<div className="space-y-3">
+			{SECTIONS.map(({ key, label }) => (
+				<div key={key} className="rounded-xl border-l-4 border-primary bg-card px-5 py-4 shadow-sm">
+					<p className="mb-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+					<p className="text-sm leading-relaxed text-foreground/80">{sections[key] ?? '—'}</p>
+				</div>
+			))}
+		</div>
+	)
+}
+
+export default function InsightsPage() {
 	const user = useAuthStore(state => state.user)
 	const { toast } = useToast()
 
-	const [open, setOpen] = useState(false)
 	const [state, setState] = useState<InsightState>('idle')
 	const [userContext, setUserContext] = useState('')
 	const [insights, setInsights] = useState('')
@@ -106,14 +163,11 @@ export const AiInsightsDialog = () => {
 	}, [])
 
 	useEffect(() => {
-		if (!open) {
-			return
-		}
 		const remaining = getCooldownRemaining()
 		if (remaining > 0) {
 			startCooldownTimer(remaining)
 		}
-	}, [open, startCooldownTimer])
+	}, [startCooldownTimer])
 
 	useEffect(() => {
 		return () => {
@@ -147,12 +201,13 @@ export const AiInsightsDialog = () => {
 
 		setState('loading-ai')
 
-		const requestBody: AiInsightsRequest = { userId: user.uid, budgetHistory: history, userContext }
+		const token = await user.getIdToken()
+		const requestBody: AiInsightsRequest = { budgetHistory: history, userContext }
 
 		try {
 			const response = await fetch('/api/ai-insights', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
 				body: JSON.stringify(requestBody)
 			})
 
@@ -180,63 +235,54 @@ export const AiInsightsDialog = () => {
 
 	const isLoading = state === 'loading-history' || state === 'loading-ai'
 	const loadingMessage = state === 'loading-history' ? 'Fetching your budget data…' : 'Analysing with AI…'
+	const sections = state === 'success' ? parseSections(insights) : {}
 
 	return (
-		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				<Button variant="outline" size="sm" className="gap-1.5">
-					<Sparkles className="h-4 w-4" />
-					AI Insights
-				</Button>
-			</DialogTrigger>
-
-			<DialogContent className="max-w-2xl">
-				<DialogHeader>
-					<DialogTitle className="flex items-center gap-2">
-						<Sparkles className="h-5 w-5 text-primary" />
-						AI Budget Insights
-					</DialogTitle>
-					<DialogDescription>
+		<main className="flex-1">
+			<div className="mx-auto max-w-2xl space-y-6 p-6 md:p-10">
+				<div>
+					<h1 className="text-2xl font-bold tracking-tight">AI Insights</h1>
+					<p className="mt-1 text-sm text-muted-foreground">
 						Analyses your last 6 months of budget data and gives actionable savings advice.
-					</DialogDescription>
-				</DialogHeader>
-
-				<div className="space-y-2">
-					<Label htmlFor="ai-context">Additional context (optional)</Label>
-					<Textarea
-						id="ai-context"
-						placeholder='e.g. "I eat out a lot" or "I want to save $5k by December"'
-						value={userContext}
-						onChange={e => setUserContext(e.target.value)}
-						disabled={isLoading}
-						className="resize-none"
-						rows={2}
-					/>
+					</p>
 				</div>
 
-				{isLoading && (
-					<div className="flex items-center gap-2 text-sm text-muted-foreground">
-						<Loader2 className="h-4 w-4 animate-spin" />
-						{loadingMessage}
+				<div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+					<div className="space-y-2">
+						<Label
+							htmlFor="ai-context"
+							className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+						>
+							Additional context (optional)
+						</Label>
+						<Textarea
+							id="ai-context"
+							placeholder='e.g. "I eat out a lot" or "I want to save $5k by December"'
+							value={userContext}
+							onChange={e => setUserContext(e.target.value)}
+							disabled={isLoading}
+							className="resize-none"
+							rows={2}
+						/>
 					</div>
-				)}
+					<div className="flex justify-end">
+						<Button onClick={handleGenerate} disabled={isLoading || cooldown > 0} className="w-40">
+							{isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+							{isLoading
+								? loadingMessage
+								: cooldown > 0
+									? `Wait ${cooldown}s`
+									: state === 'success'
+										? 'Regenerate'
+										: 'Generate'}
+						</Button>
+					</div>
+				</div>
 
-				{state === 'success' && (
-					<ScrollArea className="h-64 rounded-md border bg-muted/30 p-4">
-						<p className="whitespace-pre-wrap text-sm leading-relaxed">{insights}</p>
-					</ScrollArea>
-				)}
-
-				<Button onClick={handleGenerate} disabled={isLoading || cooldown > 0} className="w-full">
-					{isLoading
-						? 'Generating…'
-						: cooldown > 0
-							? `Wait ${cooldown}s`
-							: state === 'success'
-								? 'Regenerate'
-								: 'Generate Insights'}
-				</Button>
-			</DialogContent>
-		</Dialog>
+				{state === 'idle' && <GhostCards />}
+				{isLoading && <SkeletonCards />}
+				{state === 'success' && <InsightCards sections={sections} />}
+			</div>
+		</main>
 	)
 }

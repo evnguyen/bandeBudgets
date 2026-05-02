@@ -1,7 +1,6 @@
 'use client'
 
 import { ChevronLeft, ChevronRight, Target, TrendingDown, TrendingUp } from 'lucide-react'
-import { AiInsightsDialog } from '@/components/budget/ai-insights-dialog'
 import { SummaryCard } from '@/components/budget/summary-card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/lib/stores/auth-store'
@@ -43,31 +42,28 @@ export const BudgetHeader = () => {
 					<h1 className="text-2xl font-bold tracking-tight">Budget</h1>
 					<p className="text-sm text-muted-foreground">Zero-based monthly budget</p>
 				</div>
-				<div className="flex items-center gap-2">
-					<div className="flex items-center gap-1.5">
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={() => shiftMonth(-1)}
-							aria-label="Previous month"
-							className="h-9 w-9 shrink-0"
-						>
-							<ChevronLeft className="h-4 w-4" />
-						</Button>
-						<Button variant="ghost" onClick={goToToday} className="h-9 min-w-[148px] text-sm font-medium">
-							{formatMonth(currentDate)}
-						</Button>
-						<Button
-							variant="outline"
-							size="icon"
-							onClick={() => shiftMonth(1)}
-							aria-label="Next month"
-							className="h-9 w-9 shrink-0"
-						>
-							<ChevronRight className="h-4 w-4" />
-						</Button>
-					</div>
-					<AiInsightsDialog />
+				<div className="flex items-center gap-1.5">
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => shiftMonth(-1)}
+						aria-label="Previous month"
+						className="h-9 w-9 shrink-0"
+					>
+						<ChevronLeft className="h-4 w-4" />
+					</Button>
+					<Button variant="ghost" onClick={goToToday} className="h-9 min-w-[148px] text-sm font-medium">
+						{formatMonth(currentDate)}
+					</Button>
+					<Button
+						variant="outline"
+						size="icon"
+						onClick={() => shiftMonth(1)}
+						aria-label="Next month"
+						className="h-9 w-9 shrink-0"
+					>
+						<ChevronRight className="h-4 w-4" />
+					</Button>
 				</div>
 			</div>
 
