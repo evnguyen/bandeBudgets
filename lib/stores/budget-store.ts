@@ -31,6 +31,7 @@ interface BudgetState {
 		updates: Partial<Transaction>
 	) => Promise<void>
 	deleteTransaction: (categoryId: string, itemId: string, transactionId: string) => Promise<void>
+	setCategories: (categories: Category[]) => Promise<void>
 	saveBudgetToFirebase: () => Promise<void>
 }
 
@@ -256,6 +257,14 @@ export const useBudgetStore = create<BudgetState>((set, get) => {
 				return
 			}
 			await saveBudget(updated)
+		},
+
+		setCategories: async categories => {
+			const budget = get().currentBudget
+			if (!budget) {
+				return
+			}
+			await saveBudget(applyCategories(budget, categories))
 		},
 
 		saveBudgetToFirebase: async () => {

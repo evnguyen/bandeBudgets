@@ -70,3 +70,25 @@ export const createNewBudget = (userId: string, month: string): Budget => {
 export const getBudgetId = (userId: string, month: string): string => {
 	return `${userId}_${month}`
 }
+
+export const cloneCategories = (categories: Category[]): Category[] => {
+	return categories.map((cat, index) => {
+		const categoryId = genId(ID_PREFIXES.CATEGORY)
+		return {
+			id: categoryId,
+			name: cat.name,
+			type: cat.type,
+			expenseGroup: cat.expenseGroup,
+			order: cat.order ?? index,
+			budgetItems: cat.budgetItems.map((item, itemIndex) => ({
+				id: genId(ID_PREFIXES.ITEM),
+				categoryId,
+				name: item.name,
+				plannedAmount: item.plannedAmount,
+				spentAmount: 0,
+				transactions: [],
+				order: item.order ?? itemIndex
+			}))
+		}
+	})
+}
