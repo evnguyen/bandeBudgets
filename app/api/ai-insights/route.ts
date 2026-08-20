@@ -14,9 +14,11 @@ import { COOKIE_KEYS } from '@/lib/constants/keys'
 import type { AiInsightsRequest } from '@/lib/types'
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-	const cookieStore = await cookies()
-	if (cookieStore.get(COOKIE_KEYS.ACCESS_GRANTED)?.value !== '1') {
-		return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+	if (process.env.SITE_PASSWORD_ENABLED !== 'false') {
+		const cookieStore = await cookies()
+		if (cookieStore.get(COOKIE_KEYS.ACCESS_GRANTED)?.value !== '1') {
+			return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+		}
 	}
 
 	if (!process.env.OPEN_ROUTER_API_KEY) {

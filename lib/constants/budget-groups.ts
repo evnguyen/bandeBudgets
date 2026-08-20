@@ -5,7 +5,8 @@ export const EXPENSE_GROUPS = [
 	'Insurance',
 	'Giving',
 	'Savings',
-	'Personal'
+	'Personal',
+	'Other'
 ] as const
 
 export type ExpenseGroup = (typeof EXPENSE_GROUPS)[number]

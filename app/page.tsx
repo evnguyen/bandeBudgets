@@ -1,25 +1,28 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Receipt, Wallet } from 'lucide-react'
+import { ChevronDown, ChevronUp, Receipt, Wallet } from 'lucide-react'
 import { AddCategoryDialog } from '@/components/budget/add-category-dialog'
 import { BudgetChart } from '@/components/budget/budget-chart'
 import { BudgetEmptyState } from '@/components/budget/budget-empty-state'
 import { BudgetHeader } from '@/components/budget/budget-header'
 import { BudgetSummaryTable } from '@/components/budget/budget-summary-table'
 import { CategorySection } from '@/components/budget/category-section'
+import { Button } from '@/components/ui/button'
 import { EmptyState } from '@/components/ui/empty-state'
 import { PageLoader } from '@/components/ui/page-loader'
 import { SectionHeader } from '@/components/ui/section-header'
 import { EXPENSE_GROUPS } from '@/lib/constants/budget-groups'
 import { TRANSACTION_TYPES } from '@/lib/constants/transactions'
 import { useBudgetStore } from '@/lib/stores/budget-store'
+import { cn } from '@/lib/utils'
 import { filterByType, groupExpensesByExpenseGroup } from '@/lib/utils/categories'
 
 export default function HomePage() {
 	const currentBudget = useBudgetStore(state => state.currentBudget)
 	const loading = useBudgetStore(state => state.loading)
 	const [startedFresh, setStartedFresh] = useState(false)
+	const [isOverviewExpanded, setIsOverviewExpanded] = useState(true)
 
 	useEffect(() => {
 		setStartedFresh(false)
@@ -50,17 +53,29 @@ export default function HomePage() {
 					<BudgetEmptyState onStartFresh={() => setStartedFresh(true)} />
 				) : (
 					<div className="grid gap-6 lg:grid-cols-3">
-						<div className="space-y-4 lg:sticky lg:top-8 lg:col-start-3 lg:row-start-1 lg:self-start">
-							<SectionHeader label="Overview" />
+						<div className="min-w-0 space-y-4 lg:sticky lg:top-8 lg:col-start-3 lg:row-start-1 lg:self-start">
+							<div className="flex items-center justify-between gap-3">
+								<SectionHeader label="Overview" />
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
+									aria-label={isOverviewExpanded ? 'Collapse overview' : 'Expand overview'}
+									aria-expanded={isOverviewExpanded}
+									className="h-8 w-8 shrink-0 lg:hidden"
+								>
+									{isOverviewExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+								</Button>
+							</div>
 							{currentBudget && (
-								<>
+								<div className={cn('space-y-4', !isOverviewExpanded && 'hidden lg:block')}>
 									<BudgetChart categories={currentBudget.categories} />
 									<BudgetSummaryTable categories={currentBudget.categories} />
-								</>
+								</div>
 							)}
 						</div>
 
-						<div className="space-y-8 lg:col-span-2 lg:col-start-1 lg:row-start-1">
+						<div className="min-w-0 space-y-8 lg:col-span-2 lg:col-start-1 lg:row-start-1">
 							<div className="space-y-3">
 								<SectionHeader label="Monthly Income" />
 								{incomeCategories.length === 0 ? (
@@ -96,9 +111,6 @@ export default function HomePage() {
 										}
 										return (
 											<div key={group} className="space-y-3">
-												<p className="pl-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
-													{group}
-												</p>
 												{list.map(category => (
 													<CategorySection key={category.id} category={category} />
 												))}

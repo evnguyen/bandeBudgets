@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
 import { AddBudgetItemDialog } from '@/components/budget/add-budget-item-dialog'
 import { BudgetItemCard } from '@/components/budget/budget-item-card'
+import { EditCategoryDialog } from '@/components/budget/edit-category-dialog'
 import type { CategorySectionProps } from '@/components/budget/types'
 import {
 	AlertDialog,
@@ -31,20 +32,22 @@ export const CategorySection = ({ category }: CategorySectionProps) => {
 
 	return (
 		<div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-			<div className={cn('h-0.5', isOverBudget ? 'bg-red-500' : 'bg-primary')} />
+			{/* cedar plank along the top edge; turns ember when the category runs over */}
+			<div className={cn('h-1', isOverBudget ? 'bg-over' : 'bg-wood')} />
 
 			<div className="border-b border-border px-5 py-4">
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0 flex-1">
 						<h3 className="font-semibold text-foreground">{category.name}</h3>
 						<div className="mt-0.5 flex items-baseline gap-1.5">
-							<span className={cn('text-xl font-bold', isOverBudget ? 'text-red-500' : 'text-foreground')}>
+							<span className={cn('font-serif text-xl font-semibold', isOverBudget ? 'text-over' : 'text-foreground')}>
 								${totalSpent.toFixed(2)}
 							</span>
 							{totalPlanned > 0 && <span className="text-xs text-muted-foreground">of ${totalPlanned.toFixed(2)}</span>}
 						</div>
 					</div>
 					<div className="flex shrink-0 items-center gap-1">
+						<EditCategoryDialog category={category} />
 						<AlertDialog>
 							<AlertDialogTrigger asChild>
 								<Button variant="ghost" size="icon" aria-label="Delete category" className="h-8 w-8">

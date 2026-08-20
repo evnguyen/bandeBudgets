@@ -12,7 +12,8 @@ const config: Config = {
 		extend: {
 			fontFamily: {
 				sans: ['var(--font-geist)', 'system-ui', 'sans-serif'],
-				mono: ['var(--font-geist-mono)', 'monospace']
+				mono: ['var(--font-geist-mono)', 'monospace'],
+				serif: ['var(--font-fraunces)', 'Cambria', 'Georgia', 'serif']
 			},
 			colors: {
 				background: 'hsl(var(--background))',
@@ -48,6 +49,9 @@ const config: Config = {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
+				positive: 'hsl(var(--positive))',
+				over: 'hsl(var(--over))',
+				wood: 'hsl(var(--wood))',
 				chart: {
 					'1': 'hsl(var(--chart-1))',
 					'2': 'hsl(var(--chart-2))',
@@ -69,7 +73,9 @@ const config: Config = {
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
-				sm: 'calc(var(--radius) - 4px)'
+				sm: 'calc(var(--radius) - 4px)',
+				xl: 'calc(var(--radius) + 4px)',
+				'2xl': 'calc(var(--radius) + 10px)'
 			},
 			keyframes: {
 				'accordion-down': {

@@ -41,12 +41,12 @@ export const BudgetSummaryTable = ({ categories }: BudgetSummaryTableProps) => {
 									<td className="px-4 py-3 text-xs font-medium">{row.name}</td>
 									<td className="px-4 py-3 text-right text-xs text-muted-foreground">${row.planned.toFixed(2)}</td>
 									<td className="px-4 py-3 text-right text-xs">
-										<span className={isOver ? 'font-semibold text-red-500' : ''}>${row.spent.toFixed(2)}</span>
+										<span className={isOver ? 'font-semibold text-over' : ''}>${row.spent.toFixed(2)}</span>
 									</td>
 									<td className="px-4 py-3 text-right text-xs">
 										<span
 											className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-semibold ${
-												isOver ? 'bg-red-500/10 text-red-500' : 'bg-primary/10 text-primary'
+												isOver ? 'bg-over/10 text-over' : 'bg-primary/10 text-primary'
 											}`}
 										>
 											{row.percentage}%

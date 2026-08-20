@@ -76,6 +76,7 @@ function buildMonthSummary(budget: Budget): BudgetMonthSummary {
 async function loadBudgetHistory(userId: string): Promise<BudgetMonthSummary[]> {
 	const months = Array.from({ length: 6 }, (_, index) => {
 		const date = new Date()
+		date.setDate(1)
 		date.setMonth(date.getMonth() - index)
 		return getMonthString(date)
 	})
@@ -241,7 +242,7 @@ export default function InsightsPage() {
 		<main className="flex-1">
 			<div className="mx-auto max-w-2xl space-y-6 p-6 md:p-10">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">AI Insights</h1>
+					<h1 className="font-serif text-2xl font-semibold tracking-tight">AI Insights</h1>
 					<p className="mt-1 text-sm text-muted-foreground">
 						Analyses your last 6 months of budget data and gives actionable savings advice.
 					</p>

@@ -111,15 +111,15 @@ export const BudgetChart = ({ categories }: BudgetChartProps) => {
 				<div className="mt-4 space-y-2.5 border-t border-border pt-4">
 					<div className="flex items-center justify-between text-sm">
 						<span className="text-muted-foreground">Total Planned</span>
-						<span className="font-semibold">${totalPlanned.toFixed(2)}</span>
+						<span className="font-serif font-semibold">${totalPlanned.toFixed(2)}</span>
 					</div>
 					<div className="flex items-center justify-between text-sm">
 						<span className="text-muted-foreground">Total Spent</span>
-						<span className="font-semibold text-red-500">${totalSpent.toFixed(2)}</span>
+						<span className="font-serif font-semibold text-over">${totalSpent.toFixed(2)}</span>
 					</div>
 					<div className="flex items-center justify-between border-t border-border pt-2.5 text-sm">
 						<span className="text-muted-foreground">Remaining</span>
-						<span className="font-semibold text-emerald-500">${(totalPlanned - totalSpent).toFixed(2)}</span>
+						<span className="font-serif font-semibold text-positive">${(totalPlanned - totalSpent).toFixed(2)}</span>
 					</div>
 				</div>
 			</div>

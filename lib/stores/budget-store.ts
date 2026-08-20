@@ -5,7 +5,16 @@ import { COLLECTIONS, ID_PREFIXES } from '@/lib/constants/firebase'
 import { TRANSACTION_TYPES } from '@/lib/constants/transactions'
 import { db } from '@/lib/firebase'
 import { showNotification } from '@/lib/notifications'
-import { Budget, BudgetItem, Category, NewBudgetItem, NewCategory, NewTransaction, Transaction } from '@/lib/types'
+import {
+	Budget,
+	BudgetItem,
+	Category,
+	NewBudgetItem,
+	NewCategory,
+	NewTransaction,
+	QuickAddEntry,
+	Transaction
+} from '@/lib/types'
 import { applyCategories, calculateTotals, mapCategory, mapItem, recalculateSpent } from '@/lib/utils/budget-mutations'
 import { applyCategoryDefaults, createNewBudget, getBudgetId } from '@/lib/utils/budget-transform'
 import { getMonthString } from '@/lib/utils/dates'
@@ -24,6 +33,7 @@ interface BudgetState {
 	updateBudgetItem: (categoryId: string, itemId: string, updates: Partial<BudgetItem>) => Promise<void>
 	deleteBudgetItem: (categoryId: string, itemId: string) => Promise<void>
 	addTransaction: (categoryId: string, itemId: string, transaction: NewTransaction) => Promise<boolean>
+	addTransactions: (entries: QuickAddEntry[]) => Promise<number>
 	updateTransaction: (
 		categoryId: string,
 		itemId: string,
@@ -215,6 +225,45 @@ export const useBudgetStore = create<BudgetState>((set, get) => {
 				)
 			)
 			return true
+		},
+
+		// Quick add stages several transactions at once. Applying them to one budget
+		// object means a single Firestore write instead of one per transaction.
+		addTransactions: async entries => {
+			const budget = get().currentBudget
+			if (!budget || entries.length === 0) {
+				return 0
+			}
+
+			let updated = budget
+			let added = 0
+			for (const entry of entries) {
+				const category = updated.categories.find(existingCategory => existingCategory.id === entry.categoryId)
+				const item = category?.budgetItems.find(budgetItem => budgetItem.id === entry.itemId)
+				if (!category || !item || entry.transaction.type !== category.type) {
+					continue
+				}
+				const newTransaction: Transaction = {
+					...entry.transaction,
+					id: genId(ID_PREFIXES.TRANSACTION),
+					createdAt: Date.now()
+				}
+				updated = mapItem(updated, entry.categoryId, entry.itemId, budgetItem =>
+					recalculateSpent({
+						...budgetItem,
+						transactions: [...budgetItem.transactions, newTransaction]
+					})
+				)
+				added += 1
+			}
+
+			if (added === 0) {
+				showNotification('Could not add those transactions. Please refresh and try again.', 'error')
+				return 0
+			}
+
+			await saveBudget(updated)
+			return added
 		},
 
 		updateTransaction: async (categoryId, itemId, transactionId, updates) => {

@@ -1,8 +1,7 @@
 import type { ExpenseGroup } from '@/lib/constants/budget-groups'
-import type { ThemeColor } from '@/lib/constants/theme-colors'
 import type { TransactionType } from '@/lib/constants/transactions'
 
-export type { TransactionType, ExpenseGroup, ThemeColor }
+export type { TransactionType, ExpenseGroup }
 
 export interface Transaction {
 	id: string
@@ -44,20 +43,6 @@ export interface Budget {
 	updatedAt: number
 }
 
-export interface UserSettings {
-	userId: string
-	primaryColor: ThemeColor
-	secondaryColor: ThemeColor
-	updatedAt: number
-}
-
-export interface ThemeColorOption {
-	name: string
-	value: ThemeColor
-	primary: string
-	secondary: string
-}
-
 export interface NewCategory {
 	name: string
 	type: TransactionType
@@ -78,6 +63,12 @@ export interface NewTransaction {
 	description: string
 	date: string
 	type: TransactionType
+}
+
+export interface QuickAddEntry {
+	categoryId: string
+	itemId: string
+	transaction: NewTransaction
 }
 
 export interface BudgetMonthSummary {

@@ -1,4 +1,9 @@
-export const FREE_MODELS = ['openai/gpt-oss-120b:free'] as const
+export const FREE_MODELS = [
+	'nvidia/nemotron-3-super-120b-a12b:free',
+	'google/gemma-4-31b-it:free',
+	'openai/gpt-oss-20b:free',
+	'nvidia/nemotron-3-nano-30b-a3b:free'
+] as const
 
 export type FreeModel = (typeof FREE_MODELS)[number]
 

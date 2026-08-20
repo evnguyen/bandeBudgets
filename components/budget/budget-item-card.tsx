@@ -1,7 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { AddTransactionDialog } from '@/components/budget/add-transaction-dialog'
+import { EditBudgetItemDialog } from '@/components/budget/edit-budget-item-dialog'
+import { EditTransactionDialog } from '@/components/budget/edit-transaction-dialog'
 import type { BudgetItemCardProps } from '@/components/budget/types'
 import {
 	AlertDialog,
@@ -21,8 +24,13 @@ import { cn } from '@/lib/utils'
 
 export const BudgetItemCard = ({ categoryId, item, type }: BudgetItemCardProps) => {
 	const deleteBudgetItem = useBudgetStore(state => state.deleteBudgetItem)
+	const [showAllTransactions, setShowAllTransactions] = useState(false)
 	const isIncome = type === TRANSACTION_TYPES.INCOME
 	const transactions = item.transactions
+
+	const orderedTransactions = [...transactions].reverse()
+	const visibleTransactions = showAllTransactions ? orderedTransactions : orderedTransactions.slice(0, 3)
+	const hiddenCount = orderedTransactions.length - visibleTransactions.length
 
 	const remaining = item.plannedAmount - item.spentAmount
 	const isOverBudget = !isIncome && item.spentAmount > item.plannedAmount
@@ -34,7 +42,7 @@ export const BudgetItemCard = ({ categoryId, item, type }: BudgetItemCardProps) 
 					<div className="min-w-0 flex-1">
 						<h4 className="truncate text-sm font-semibold">{item.name}</h4>
 						<div className="mt-0.5 flex items-baseline gap-1.5">
-							<span className={cn('text-lg font-bold', isOverBudget && 'text-red-500')}>
+							<span className={cn('font-serif text-lg font-semibold', isOverBudget && 'text-over')}>
 								${item.spentAmount.toFixed(2)}
 							</span>
 							<span className="text-xs text-muted-foreground">
@@ -43,34 +51,37 @@ export const BudgetItemCard = ({ categoryId, item, type }: BudgetItemCardProps) 
 							</span>
 						</div>
 					</div>
-					<AlertDialog>
-						<AlertDialogTrigger asChild>
-							<Button variant="ghost" size="icon" aria-label="Delete item" className="h-7 w-7 shrink-0">
-								<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-							</Button>
-						</AlertDialogTrigger>
-						<AlertDialogContent>
-							<AlertDialogHeader>
-								<AlertDialogTitle>Delete Budget Item</AlertDialogTitle>
-								<AlertDialogDescription>
-									Are you sure you want to delete this budget item? This action cannot be undone and will remove all
-									associated transactions.
-								</AlertDialogDescription>
-							</AlertDialogHeader>
-							<AlertDialogFooter>
-								<AlertDialogCancel>Cancel</AlertDialogCancel>
-								<AlertDialogAction
-									onClick={() => deleteBudgetItem(categoryId, item.id)}
-									className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-								>
-									Delete
-								</AlertDialogAction>
-							</AlertDialogFooter>
-						</AlertDialogContent>
-					</AlertDialog>
+					<div className="flex shrink-0 items-center gap-0.5">
+						<EditBudgetItemDialog categoryId={categoryId} item={item} />
+						<AlertDialog>
+							<AlertDialogTrigger asChild>
+								<Button variant="ghost" size="icon" aria-label="Delete item" className="h-7 w-7 shrink-0">
+									<Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+								</Button>
+							</AlertDialogTrigger>
+							<AlertDialogContent>
+								<AlertDialogHeader>
+									<AlertDialogTitle>Delete Budget Item</AlertDialogTitle>
+									<AlertDialogDescription>
+										Are you sure you want to delete this budget item? This action cannot be undone and will remove all
+										associated transactions.
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel>Cancel</AlertDialogCancel>
+									<AlertDialogAction
+										onClick={() => deleteBudgetItem(categoryId, item.id)}
+										className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+									>
+										Delete
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+					</div>
 				</div>
 
-				<p className={cn('text-xs', isOverBudget ? 'text-red-500' : 'text-muted-foreground')}>
+				<p className={cn('text-xs', isOverBudget ? 'text-over' : 'text-muted-foreground')}>
 					{isIncome
 						? `Received: $${item.spentAmount.toFixed(2)}`
 						: isOverBudget
@@ -82,18 +93,25 @@ export const BudgetItemCard = ({ categoryId, item, type }: BudgetItemCardProps) 
 
 				{transactions.length > 0 && (
 					<div className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-2.5">
-						<p className="text-xs font-medium text-muted-foreground">Recent Transactions</p>
-						{transactions
-							.slice(-3)
-							.reverse()
-							.map(transaction => (
-								<div key={transaction.id} className="flex items-center justify-between gap-2 text-xs">
-									<span className="truncate text-foreground/80">{transaction.description}</span>
-									<span className="shrink-0 font-medium">${transaction.amount.toFixed(2)}</span>
-								</div>
-							))}
-						{transactions.length > 3 && (
-							<p className="text-xs text-muted-foreground">+{transactions.length - 3} more</p>
+						<p className="text-xs font-medium text-muted-foreground">
+							{showAllTransactions ? 'All Transactions' : 'Recent Transactions'}
+						</p>
+						{visibleTransactions.map(transaction => (
+							<EditTransactionDialog
+								key={transaction.id}
+								categoryId={categoryId}
+								budgetItemId={item.id}
+								transaction={transaction}
+							/>
+						))}
+						{orderedTransactions.length > 3 && (
+							<button
+								type="button"
+								onClick={() => setShowAllTransactions(!showAllTransactions)}
+								className="text-xs text-muted-foreground underline-offset-2 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+							>
+								{showAllTransactions ? 'Show less' : `+${hiddenCount} more`}
+							</button>
 						)}
 					</div>
 				)}

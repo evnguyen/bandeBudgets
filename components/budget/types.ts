@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import type { BudgetItem, Category, ExpenseCategorySummary, TransactionType } from '@/lib/types'
+import type { BudgetItem, Category, ExpenseCategorySummary, Transaction, TransactionType } from '@/lib/types'
 
 export interface BudgetChartProps {
 	categories: Category[]
@@ -38,6 +38,21 @@ export interface AddTransactionDialogProps {
 	categoryId: string
 	budgetItemId: string
 	transactionType: TransactionType
+}
+
+export interface EditCategoryDialogProps {
+	category: Category
+}
+
+export interface EditBudgetItemDialogProps {
+	categoryId: string
+	item: BudgetItem
+}
+
+export interface EditTransactionDialogProps {
+	categoryId: string
+	budgetItemId: string
+	transaction: Transaction
 }
 
 export interface SummaryCardProps {

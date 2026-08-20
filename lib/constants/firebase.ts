@@ -1,6 +1,5 @@
 export const COLLECTIONS = {
-	BUDGETS: 'budgets',
-	SETTINGS: 'settings'
+	BUDGETS: 'budgets'
 } as const
 
 export const ID_PREFIXES = {
@@ -8,5 +7,3 @@ export const ID_PREFIXES = {
 	ITEM: 'item',
 	TRANSACTION: 'txn'
 } as const
-
-export const SETTINGS_DEBOUNCE_MS = 500

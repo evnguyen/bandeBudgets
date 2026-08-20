@@ -8,75 +8,90 @@
 	}
 }
 
+/*
+ * Hinoki — cypress bathhouse.
+ * Warm cedar paper, cypress-green accent, wood-plank edges, ember for over-budget.
+ * Semantic tokens (--positive / --over / --wood) keep alerts warm instead of alarm-red.
+ */
 @layer base {
 	:root {
-		--background: 0 0% 96%;
-		--foreground: 0 0% 9%;
-		--card: 0 0% 100%;
-		--card-foreground: 0 0% 9%;
-		--popover: 0 0% 100%;
-		--popover-foreground: 0 0% 9%;
-		--primary: 217 91% 60%;
-		--primary-foreground: 0 0% 98%;
-		--secondary: 217 91% 70%;
-		--secondary-foreground: 0 0% 9%;
-		--muted: 0 0% 91%;
-		--muted-foreground: 0 0% 45%;
-		--accent: 0 0% 91%;
-		--accent-foreground: 0 0% 9%;
-		--destructive: 0 84% 60%;
-		--destructive-foreground: 0 0% 98%;
-		--border: 0 0% 87%;
-		--input: 0 0% 87%;
-		--ring: 217 91% 60%;
-		--chart-1: 12 76% 61%;
-		--chart-2: 173 58% 39%;
-		--chart-3: 197 37% 24%;
-		--chart-4: 43 74% 66%;
-		--chart-5: 27 87% 67%;
-		--radius: 0.625rem;
-		--sidebar-background: 0 0% 98%;
-		--sidebar-foreground: 240 5.3% 26.1%;
-		--sidebar-primary: 240 5.9% 10%;
-		--sidebar-primary-foreground: 0 0% 98%;
-		--sidebar-accent: 240 4.8% 95.9%;
-		--sidebar-accent-foreground: 240 5.9% 10%;
-		--sidebar-border: 220 13% 91%;
-		--sidebar-ring: 217.2 91.2% 59.8%;
+		--background: 42 50% 92%;
+		--foreground: 34 19% 25%;
+		--card: 44 65% 96%;
+		--card-foreground: 34 19% 25%;
+		--popover: 44 65% 96%;
+		--popover-foreground: 34 19% 25%;
+		--primary: 90 22% 44%;
+		--primary-foreground: 44 65% 96%;
+		--secondary: 90 22% 54%;
+		--secondary-foreground: 34 19% 25%;
+		--muted: 42 47% 88%;
+		--muted-foreground: 39 20% 45%;
+		--accent: 42 47% 88%;
+		--accent-foreground: 34 19% 25%;
+		--destructive: 13 48% 42%;
+		--destructive-foreground: 44 65% 96%;
+		--border: 41 43% 83%;
+		--input: 41 43% 83%;
+		--ring: 90 22% 44%;
+		--positive: 92 26% 38%;
+		--over: 22 49% 49%;
+		--wood: 36 44% 63%;
+		--chart-1: 90 22% 44%;
+		--chart-2: 36 44% 63%;
+		--chart-3: 22 49% 49%;
+		--chart-4: 83 28% 31%;
+		--chart-5: 38 37% 39%;
+		--radius: 0.75rem;
+		--sidebar-background: 44 65% 96%;
+		--sidebar-foreground: 34 19% 25%;
+		--sidebar-primary: 90 22% 44%;
+		--sidebar-primary-foreground: 44 65% 96%;
+		--sidebar-accent: 42 47% 88%;
+		--sidebar-accent-foreground: 34 19% 25%;
+		--sidebar-border: 41 43% 83%;
+		--sidebar-ring: 90 22% 44%;
+		--paper-top: 44 55% 94%;
+		--paper-bottom: 40 45% 90%;
 	}
 	.dark {
-		--background: 0 0% 7%;
-		--foreground: 0 0% 95%;
-		--card: 0 0% 11%;
-		--card-foreground: 0 0% 95%;
-		--popover: 0 0% 11%;
-		--popover-foreground: 0 0% 95%;
-		--primary: 0 0% 95%;
-		--primary-foreground: 0 0% 9%;
-		--secondary: 0 0% 16%;
-		--secondary-foreground: 0 0% 95%;
-		--muted: 0 0% 16%;
-		--muted-foreground: 0 0% 60%;
-		--accent: 0 0% 16%;
-		--accent-foreground: 0 0% 95%;
-		--destructive: 0 72% 55%;
-		--destructive-foreground: 0 0% 98%;
-		--border: 0 0% 20%;
-		--input: 0 0% 16%;
-		--ring: 0 0% 83%;
-		--chart-1: 220 70% 50%;
-		--chart-2: 160 60% 45%;
-		--chart-3: 30 80% 55%;
-		--chart-4: 280 65% 60%;
-		--chart-5: 340 75% 55%;
-		--sidebar-background: 240 5.9% 10%;
-		--sidebar-foreground: 240 4.8% 95.9%;
-		--sidebar-primary: 224.3 76.3% 48%;
-		--sidebar-primary-foreground: 0 0% 100%;
-		--sidebar-accent: 240 3.7% 15.9%;
-		--sidebar-accent-foreground: 240 4.8% 95.9%;
-		--sidebar-border: 240 3.7% 15.9%;
-		--sidebar-ring: 217.2 91.2% 59.8%;
+		--background: 36 19% 10%;
+		--foreground: 39 41% 88%;
+		--card: 38 26% 12%;
+		--card-foreground: 39 41% 88%;
+		--popover: 38 26% 12%;
+		--popover-foreground: 39 41% 88%;
+		--primary: 89 30% 60%;
+		--primary-foreground: 36 19% 10%;
+		--secondary: 89 28% 68%;
+		--secondary-foreground: 36 19% 10%;
+		--muted: 38 23% 16%;
+		--muted-foreground: 40 22% 56%;
+		--accent: 38 23% 16%;
+		--accent-foreground: 39 41% 88%;
+		--destructive: 12 51% 52%;
+		--destructive-foreground: 39 41% 88%;
+		--border: 35 23% 19%;
+		--input: 38 23% 16%;
+		--ring: 89 30% 60%;
+		--positive: 89 30% 60%;
+		--over: 24 62% 61%;
+		--wood: 36 44% 63%;
+		--chart-1: 89 30% 60%;
+		--chart-2: 36 44% 63%;
+		--chart-3: 24 62% 61%;
+		--chart-4: 92 26% 45%;
+		--chart-5: 40 22% 56%;
+		--sidebar-background: 38 26% 12%;
+		--sidebar-foreground: 39 41% 88%;
+		--sidebar-primary: 89 30% 60%;
+		--sidebar-primary-foreground: 36 19% 10%;
+		--sidebar-accent: 38 23% 16%;
+		--sidebar-accent-foreground: 39 41% 88%;
+		--sidebar-border: 35 23% 19%;
+		--sidebar-ring: 89 30% 60%;
+		--paper-top: 38 22% 12%;
+		--paper-bottom: 34 18% 9%;
 	}
 }
 
@@ -86,5 +101,11 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		background-image: linear-gradient(170deg, hsl(var(--paper-top)) 0%, hsl(var(--paper-bottom)) 100%);
+		background-attachment: fixed;
+	}
+	/* Figures read as numerals on a ledger, not UI chrome. */
+	.font-serif {
+		font-variant-numeric: tabular-nums;
 	}
 }

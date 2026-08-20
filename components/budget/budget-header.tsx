@@ -1,6 +1,7 @@
 'use client'
 
 import { ChevronLeft, ChevronRight, Target, TrendingDown, TrendingUp } from 'lucide-react'
+import { QuickAddDialog } from '@/components/budget/quick-add-dialog'
 import { SummaryCard } from '@/components/budget/summary-card'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/lib/stores/auth-store'
@@ -16,18 +17,16 @@ export const BudgetHeader = () => {
 
 	const shiftMonth = (months: number) => {
 		const next = new Date(currentDate)
+		next.setDate(1)
 		next.setMonth(next.getMonth() + months)
-		console.info('[BudgetHeader] shiftMonth →', formatMonth(next))
 		if (user) {
 			setMonth(user.uid, next)
 		}
 	}
 
 	const goToToday = () => {
-		const now = new Date()
-		console.info('[BudgetHeader] goToToday →', formatMonth(now))
 		if (user) {
-			setMonth(user.uid, now)
+			setMonth(user.uid, new Date())
 		}
 	}
 
@@ -39,10 +38,11 @@ export const BudgetHeader = () => {
 		<div className="space-y-5">
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<div>
-					<h1 className="text-2xl font-bold tracking-tight">Budget</h1>
+					<h1 className="font-serif text-2xl font-semibold tracking-tight">Budget</h1>
 					<p className="text-sm text-muted-foreground">Zero-based monthly budget</p>
 				</div>
-				<div className="flex items-center gap-1.5">
+				<div className="flex flex-wrap items-center gap-1.5">
+					<QuickAddDialog />
 					<Button
 						variant="outline"
 						size="icon"
@@ -71,23 +71,23 @@ export const BudgetHeader = () => {
 				<SummaryCard
 					label="Planned Income"
 					amount={totalIncome}
-					icon={<TrendingUp className="h-4 w-4 text-emerald-500" />}
-					iconBg="bg-emerald-500/10"
-					amountClass="text-emerald-500"
+					icon={<TrendingUp className="h-4 w-4 text-positive" />}
+					iconBg="bg-positive/10"
+					amountClass="text-positive"
 				/>
 				<SummaryCard
 					label="Planned Expenses"
 					amount={totalExpenses}
-					icon={<TrendingDown className="h-4 w-4 text-red-500" />}
-					iconBg="bg-red-500/10"
-					amountClass="text-red-500"
+					icon={<TrendingDown className="h-4 w-4 text-over" />}
+					iconBg="bg-over/10"
+					amountClass="text-over"
 				/>
 				<SummaryCard
 					label="Left to Budget"
 					amount={remaining}
-					icon={<Target className={cn('h-4 w-4', remaining >= 0 ? 'text-primary' : 'text-red-500')} />}
-					iconBg={remaining >= 0 ? 'bg-primary/10' : 'bg-red-500/10'}
-					amountClass={remaining >= 0 ? 'text-primary' : 'text-red-500'}
+					icon={<Target className={cn('h-4 w-4', remaining >= 0 ? 'text-primary' : 'text-over')} />}
+					iconBg={remaining >= 0 ? 'bg-primary/10' : 'bg-over/10'}
+					amountClass={remaining >= 0 ? 'text-primary' : 'text-over'}
 					fullWidthOnMobile
 				/>
 			</div>

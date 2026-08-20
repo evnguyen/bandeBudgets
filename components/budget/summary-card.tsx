@@ -19,7 +19,7 @@ export const SummaryCard = ({
 			<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
 			<div className={cn('rounded-md p-1.5', iconBg)}>{icon}</div>
 		</div>
-		<p className={cn('mt-3 text-2xl font-bold tracking-tight sm:mt-4 sm:text-3xl', amountClass)}>
+		<p className={cn('mt-3 font-serif text-2xl font-semibold tracking-tight sm:mt-4 sm:text-3xl', amountClass)}>
 			${amount.toFixed(2)}
 		</p>
 	</div>
